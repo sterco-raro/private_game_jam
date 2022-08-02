@@ -16,6 +16,7 @@ try:
 	import pygame
 	from pygame.locals import *
 
+	from utils import load_image
 	from constants import (
 		GAME_VERSION,
 		GAME_WIDTH, GAME_HEIGHT,
