@@ -16,11 +16,12 @@ try:
 	import pygame
 	from pygame.locals import *
 
-	from utils import load_image
 	from constants import (
 		GAME_VERSION,
 		GAME_WIDTH, GAME_HEIGHT,
 	)
+	from utils import load_image
+	from entities import *
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -52,6 +53,13 @@ def main():
 	screen.blit(background, (0, 0))
 	pygame.display.flip()
 
+	# Initialize entities
+	# player = Player((GAME_WIDTH//2 - 16, GAME_HEIGHT//2 - 16), 8)
+	player = Player(position_xy=(10, 10), step=5)
+
+	# Rendering groups
+	player_sprites = pygame.sprite.RenderPlain(player)
+
 	# Initialize clock
 	clock = pygame.time.Clock()
 
@@ -62,6 +70,33 @@ def main():
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
+
+			elif event.type == KEYDOWN:
+				if event.key == K_a:
+					player.change_direction_x(-1)
+				if event.key == K_d:
+					player.change_direction_x(1)
+				if event.key == K_w:
+					player.change_direction_y(-1)
+				if event.key == K_s:
+					player.change_direction_y(1)
+
+			elif event.type == KEYUP:
+				if event.key == K_a:
+					player.change_direction_x(1)
+				if event.key == K_d:
+					player.change_direction_x(-1)
+				if event.key == K_w:
+					player.change_direction_y(1)
+				if event.key == K_s:
+					player.change_direction_y(-1)
+
+		# Clear current player position
+		screen.blit(background, player.rect, player.rect)
+		# Update positions
+		player.update()
+		# Re-draw things on screen
+		player_sprites.draw(screen)
 
 		pygame.display.flip()
 
