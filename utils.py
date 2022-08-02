@@ -22,4 +22,4 @@ def load_image(name):
     except pygame.error as message:
         print('Cannot load image: {}'.format(fullname))
         raise SystemExit(message)
-    return image, image.get_rect()
+    return image

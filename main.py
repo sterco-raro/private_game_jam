@@ -41,7 +41,7 @@ def main():
 
 	# Initialize screen
 	pygame.init()
-	screen = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))
+	screen = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))#, pygame.FULLSCREEN)
 	pygame.display.set_caption("Private Game Jam")
 
 	# Fill a black background
@@ -55,7 +55,7 @@ def main():
 
 	# Initialize entities
 	# player = Player((GAME_WIDTH//2 - 16, GAME_HEIGHT//2 - 16), 8)
-	player = Player(position_xy=(10, 10), step=5)
+	player = Player(position_xy=(128, 128))
 
 	# Rendering groups
 	player_sprites = pygame.sprite.RenderPlain(player)
@@ -63,42 +63,26 @@ def main():
 	# Initialize clock
 	clock = pygame.time.Clock()
 
-	while 1:
-		# FPS limit
-		clock.tick(60)
+	dt = 0
+	events = None
 
-		for event in pygame.event.get():
+	while 1:
+		events = pygame.event.get()
+
+		for event in events:
 			if event.type == QUIT:
 				return
-
-			elif event.type == KEYDOWN:
-				if event.key == K_a:
-					player.change_direction_x(-1)
-				if event.key == K_d:
-					player.change_direction_x(1)
-				if event.key == K_w:
-					player.change_direction_y(-1)
-				if event.key == K_s:
-					player.change_direction_y(1)
-
-			elif event.type == KEYUP:
-				if event.key == K_a:
-					player.change_direction_x(1)
-				if event.key == K_d:
-					player.change_direction_x(-1)
-				if event.key == K_w:
-					player.change_direction_y(1)
-				if event.key == K_s:
-					player.change_direction_y(-1)
 
 		# Clear current player position
 		screen.blit(background, player.rect, player.rect)
 		# Update positions
-		player.update()
+		player_sprites.update(dt)
 		# Re-draw things on screen
 		player_sprites.draw(screen)
+		pygame.display.update()
 
-		pygame.display.flip()
+		# FPS limit and keep deltatime
+		dt = clock.tick(60)
 
 
 # -------------------------------------------------------------------------------------------------
