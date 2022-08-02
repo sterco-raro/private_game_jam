@@ -18,7 +18,6 @@ except ImportError as importErr:
 class Entity(pygame.sprite.Sprite):
 	"""Generic entity
 	Returns: object
-	Functions: update
 	Attributes: position_xy (starting position), file_name (sprite file name)"""
 	def __init__(self, position_xy, file_name):
 		pygame.sprite.Sprite.__init__(self)
@@ -26,23 +25,17 @@ class Entity(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.position = pygame.Vector2(position_xy)
 
-	def update(self, dt):
-		pass
-
 
 # -------------------------------------------------------------------------------------------------
 
 
-class Player(pygame.sprite.Sprite):
+class Player(Entity):
 	"""Player entity
 	Returns: player object
 	Functions: update
 	Attributes: position_xy (starting position)"""
 	def __init__(self, position_xy):
-		pygame.sprite.Sprite.__init__(self)
-		self.image = load_image('player.png')
-		self.rect = self.image.get_rect()
-		self.position = pygame.Vector2(position_xy)
+		super().__init__(position_xy, "player.png")
 
 	def update(self, dt):
 		pressed = pygame.key.get_pressed()
