@@ -14,12 +14,13 @@ try:
 	import math
 	import os
 	import pygame
+	import time
 	from pygame.locals import *
 
 	from constants import *
 	from utils import load_image
 	from entities import *
-	from viewport import SimpleCamera
+	from camera import SimpleCamera
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -34,27 +35,24 @@ def main():
 
 	# Variables list
 	clock = None
-	screen = None
-	background = None
+	viewport = None
+	world = None
 
 	# Initialize screen
 	pygame.init()
-	screen = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
+	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
 	pygame.display.set_caption("Private Game Jam")
 
-	# Fill a black background
-	background = pygame.Surface((1000, 1000))
-	background = background.convert()
-	background.fill((0, 0, 0))
+	# Fill a black background as our world level
+	world = pygame.Surface((1000, 1000))
+	world = world.convert()
+	world.fill((0, 0, 0))
 
-	# TODO TMP draw green stars on screen
-	for _ in range(3000):
-		x, y = random.randint(0, 1000), random.randint(0, 1000)
-		pygame.draw.rect(background, pygame.Color('green'), (x, y, 2, 2))
-	black_surface = background.copy()
+	# Keep a black surface reference to clear the player position
+	black_surface = world.copy()
 
-	# Blit everything to the screen
-	screen.blit(background, (0, 0))
+	# Blit everything to the viewport
+	viewport.blit(world, (0, 0))
 	pygame.display.flip()
 
 	# Camera viewport
@@ -72,10 +70,7 @@ def main():
 	# TODO TMP debug coordinates HUD
 	font = pygame.font.SysFont(None, 24)
 	debug_txt_coords = font.render("({}, {})".format(0, 0), True, (255,255,255))
-	screen.blit(debug_txt_coords, (20, 20))
-
-	debug_txt_ciao = font.render("CIAO", True, (255,255,255))
-	screen.blit(debug_txt_ciao, (400, 20))
+	viewport.blit(debug_txt_coords, (20, 20))
 
 	dt = 0
 	font_x = 0
@@ -90,26 +85,23 @@ def main():
 				return
 
 		# Clear current player position
-		background.blit(black_surface, player.rect, player.rect)
+		world.blit(black_surface, player.rect, player.rect)
 		# Clear debug font position
-		screen.blit(background, (20, 20))
+		viewport.blit(world, (20, 20))
 		# Update sprites
 		player_sprites.update(dt)
 
-		# Re-draw things on screen
-		player_sprites.draw(background)
+		# Re-draw things on viewport
+		player_sprites.draw(world)
 
 		# Update camera position
 		camera.update(player)
 		# Draw viewport
-		screen.blit(background, (0, 0), camera.rect)
+		viewport.blit(world, (0, 0), camera.rect)
 
 		# Draw debug text
 		debug_txt_coords = font.render("({}, {})".format(font_x, font_y), True, (255,255,255))
-		screen.blit(debug_txt_coords, (20, 20))
-
-		debug_txt_ciao = font.render("CIAO", True, (255,255,255))
-		screen.blit(debug_txt_ciao, (400, 20))
+		viewport.blit(debug_txt_coords, (20, 20))
 
 		pygame.display.update()
 
