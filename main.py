@@ -21,6 +21,7 @@ try:
 	from utils import load_image
 	from entities import *
 	from camera import SimpleCamera
+	from game_map import *
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -43,31 +44,27 @@ def main():
 	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
 	pygame.display.set_caption("Private Game Jam")
 
-	# Fill a black background as our world level
-	world = pygame.Surface((1000, 1000))
-	world = world.convert()
-	world.fill((0, 0, 0))
+	# Initialize clock
+	clock = pygame.time.Clock()
 
-	# Keep a black surface reference to clear the player position
-	black_surface = world.copy()
+	# Background image
+	background = load_image("background.png")
+	background = pygame.transform.scale(background, (1000, 1000))
 
-	# Blit everything to the viewport
-	viewport.blit(world, (0, 0))
-	pygame.display.flip()
+	# Holds the whole game world state
+	canvas = pygame.Surface((1000, 1000)).convert()
+	canvas.fill((60, 60, 60))
 
 	# Camera viewport
-	camera = SimpleCamera(GAME_WIDTH, GAME_HEIGHT)
+	camera = SimpleCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
 
 	# Initialize entities
 	player = Player(position_xy=(484, 484))
 
 	# Rendering groups
-	player_sprites = pygame.sprite.RenderPlain(player)
+	allsprites = pygame.sprite.RenderPlain(player)
 
-	# Initialize clock
-	clock = pygame.time.Clock()
-
-	# TODO TMP debug coordinates HUD
+	# Debug HUD: player coordinates
 	font = pygame.font.SysFont(None, 24)
 	debug_txt_coords = font.render("({}, {})".format(0, 0), True, (255,255,255))
 	viewport.blit(debug_txt_coords, (20, 20))
@@ -77,35 +74,43 @@ def main():
 	font_y = 0
 	events = None
 
-	while 1:
-		events = pygame.event.get()
+	tilemap = Tilemap(Tileset("tileset.png"))
 
+	while 1:
+		# Manage general pygame events
+		events = pygame.event.get()
 		for event in events:
 			if event.type == QUIT:
 				return
 
-		# Clear current player position
-		world.blit(black_surface, player.rect, player.rect)
-		# Clear debug font position
-		viewport.blit(world, (20, 20))
-		# Update sprites
-		player_sprites.update(dt)
+			if event.type == KEYDOWN:
+				if event.key == K_r:
+					tilemap.set_random()
+				if event.key == K_z:
+					tilemap.set_zero()
 
-		# Re-draw things on viewport
-		player_sprites.draw(world)
+		# Clear temporary canvas
+		canvas.blit(background, (0, 0))
 
-		# Update camera position
+		# Update sprites and camera position
+		allsprites.update(dt)
 		camera.update(player)
-		# Draw viewport
-		viewport.blit(world, (0, 0), camera.rect)
 
-		# Draw debug text
+		tilemap.render()
+		canvas.blit(tilemap.image, (256, 256))
+
+		# Draw sprites on temporary canvas
+		allsprites.draw(canvas)
+
+		# Done drawing stuff, blit everything to screen
+		viewport.blit(canvas, (0, 0), camera.rect)
+
+		# Draw HUD
 		debug_txt_coords = font.render("({}, {})".format(font_x, font_y), True, (255,255,255))
 		viewport.blit(debug_txt_coords, (20, 20))
 
+		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
-
-		# FPS limit and keep deltatime
 		dt = clock.tick(60)
 		font_x = int(player.position[0])
 		font_y = int(player.position[1])
