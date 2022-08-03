@@ -42,40 +42,64 @@ def main():
 	# Initialize screen
 	pygame.init()
 	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
-	pygame.display.set_caption("Private Game Jam")
+	pygame.display.set_caption("Giancarlo Pazzo Sgravato")
 
 	# Initialize clock
 	clock = pygame.time.Clock()
 
-	# Background image
-	background = load_image("background.png")
-	background = pygame.transform.scale(background, (1000, 1000))
+	# Static world surface (just a splash screen as of now)
+	world = load_image("background.png")
+	world = pygame.transform.scale(world, (WORLD_WIDTH, WORLD_HEIGHT))
 
 	# Holds the whole game world state
-	canvas = pygame.Surface((1000, 1000)).convert()
+	canvas = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
 	canvas.fill((60, 60, 60))
+
+	# Game map
+	tilemap = Tilemap(Tileset("tileset.png"), size=(MAP_WIDTH, MAP_HEIGHT))
 
 	# Camera viewport
 	camera = SimpleCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
 
 	# Initialize entities
-	player = Player(position_xy=(484, 484))
+	player = Player(position_xy=(320, 320))
 
 	# Rendering groups
-	allsprites = pygame.sprite.RenderPlain(player)
+	all_sprites = pygame.sprite.RenderPlain(player)
 
-	# Debug HUD: player coordinates
+	# Debug HUD font
 	font = pygame.font.SysFont(None, 24)
-	debug_txt_coords = font.render("({}, {})".format(0, 0), True, (255,255,255))
-	viewport.blit(debug_txt_coords, (20, 20))
 
+	# Draw the splash screen
+	viewport.blit(world, (0, 0))
+	debug_txt_coords = font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI INVIO)", True, (255, 255, 255))
+	viewport.blit(debug_txt_coords, (VIEWPORT_WIDTH/2 - 120, VIEWPORT_HEIGHT*3/4))
+	pygame.display.flip()
+
+	# Miscellanea loop variables
 	dt = 0
 	font_x = 0
 	font_y = 0
 	events = None
+	redraw_map = False
+	running = True
 
-	tilemap = Tilemap(Tileset("tileset.png"))
+	# Main menu
+	while running:
+		events = pygame.event.get()
+		for event in events:
+			if event.type == QUIT:
+				return
 
+			if event.type == KEYDOWN:
+				if event.key == K_RETURN:
+					running = False
+
+	# Load map and render to the background
+	tilemap.set_from_file("data/level.txt")
+	tilemap.render(world)
+
+	# Game loop
 	while 1:
 		# Manage general pygame events
 		events = pygame.event.get()
@@ -84,29 +108,39 @@ def main():
 				return
 
 			if event.type == KEYDOWN:
-				if event.key == K_r:
-					tilemap.set_random()
-				if event.key == K_z:
-					tilemap.set_zero()
+				# Reload map data
+				if event.key == K_l:
+					tilemap.set_from_file("data/level.txt")
+					redraw_map = True
+				# Save map data to file
+				if event.key == K_o:
+					tilemap.save_to_file()
 
 		# Clear temporary canvas
-		canvas.blit(background, (0, 0))
+		canvas.blit(world, (0, 0))
 
 		# Update sprites and camera position
-		allsprites.update(dt)
+		# all_sprites.update()
+		player.update(dt, tilemap.collision_map)
 		camera.update(player)
 
-		tilemap.render()
-		canvas.blit(tilemap.image, (256, 256))
+		# Only draw world map when needed (on changes)
+		if redraw_map:
+			tilemap.render(world)
+			redraw_map = False
 
 		# Draw sprites on temporary canvas
-		allsprites.draw(canvas)
+		all_sprites.draw(canvas)
+
+		# Debug collisions UI
+		for rect in tilemap.collision_map:
+			pygame.draw.rect(canvas, (40, 80, 200), rect, width=1)
 
 		# Done drawing stuff, blit everything to screen
 		viewport.blit(canvas, (0, 0), camera.rect)
 
 		# Draw HUD
-		debug_txt_coords = font.render("({}, {})".format(font_x, font_y), True, (255,255,255))
+		debug_txt_coords = font.render("Stai qua: ({}, {})".format(font_x, font_y), True, (255, 255, 255))
 		viewport.blit(debug_txt_coords, (20, 20))
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)

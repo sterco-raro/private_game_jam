@@ -7,7 +7,7 @@ try:
 	import pygame
 	import numpy as np
 	from enum import auto, Enum
-	from constants import TILE_SIZE
+	from constants import TILE_SIZE, TILES_INFO
 	from utils import load_image
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -17,51 +17,8 @@ except ImportError as importErr:
 # -------------------------------------------------------------------------------------------------
 
 
-class TileType(Enum):
-	FLOOR = auto()
-	WALL = auto()
-
-class TileSurface(object):
-	"""TODO docstring for TileSurface"""
-	def __init__(self, color):
-		self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
-		self.image.fill(color)
-
-# TODO docs for TILE_IMAGES
-TILE_IMAGES = [
-	# TileType.FLOOR: TileSurface((255, 245, 180)),
-	# TileType.WALL: TileSurface((66, 66, 66)),
-	TileSurface((255, 245, 180)),
-	TileSurface((66, 66, 66)),
-]
-
-
-# -------------------------------------------------------------------------------------------------
-
-
-class Tile(object):
-	"""TODO docstring for Tile"""
-	def __init__(
-		self,
-		pos_x, pos_y, size=TILE_SIZE,
-		tile_type=TileType.FLOOR,
-		walkable=True,
-		visible=False,
-		explored=False
-	):
-		self.position = pygame.Vector2(pos_x, pos_y)
-		# Tile type enum
-		self.tile_type = tile_type
-		# This tile can be walked on
-		self.walkable = walkable
-		# Currently visible by the player
-		self.visible = visible
-		# Has been visited by the player
-		self.explored = explored
-
-
 class Tileset(object):
-	"""TODO docstring for Tileset"""
+	"""Load and holds a tileset from a png image"""
 	def __init__(self, file_name, size=(TILE_SIZE, TILE_SIZE), margin=1, spacing=1):
 		self.file_name = file_name
 		self.size = size
@@ -90,67 +47,58 @@ class Tileset(object):
 				self.tiles.append(tile)
 
 
-class Tilemap(object):
-	"""TODO docstring for Tilemap"""
-	def __init__(self, tileset, size=(10, 20), rect=None):
-		self.size = size
-		self.tileset = tileset
-		self.map = np.zeros(size, dtype=int)
-		self.tilesmap = []
-
-		h, w = self.size
-		self.image = pygame.Surface((32*w, 32*h))
-		if rect:
-			self.rect = pygame.Rect(rect)
-		else:
-			self.rect = self.image.get_rect()
-
-		# # Fill tilesmap with Tile() values
-		# w = len(self.tileset.)
-
-	def render(self):
-		tile = None
-		m, n = self.map.shape
-		for i in range(m):
-			for j in range(n):
-				tile = self.tileset.tiles[self.map[i, j]]
-				self.image.blit(tile, (j*32, i*32))
-
-	def set_zero(self):
-		self.map = np.zeros(self.size, dtype=int)
-		print(self.map)
-		print(self.map.shape)
-		self.render()
-
-	def set_random(self):
-		n = len(self.tileset.tiles)
-		self.map = np.random.randint(n, size=self.size)
-		print(self.map)
-		self.render()
-
-
 # -------------------------------------------------------------------------------------------------
 
 
-class GameMap(object):
-	"""TODO docstring for GameMap"""
-	def __init__(self, width, height, entities=[]):
-		self.width = width
-		self.height = height
-		self.entities = entities
-		# Fill tiles list with default values
-		self.tiles = [[Tile(x, y) for x in range(width)] for y in range(height)]
-		# Tile rect reference
-		self.tile_rect = pygame.Rect((0, 0, TILE_SIZE, TILE_SIZE))
+class Tilemap(object):
+	"""TODO docstring for Tilemap"""
+	def __init__(self, tileset, size=(10, 20)):
+		self.size = size
+		self.tileset = tileset
+		self.map = None
+		self.collision_map = []
 
-	def draw(self, surface, offset):
-		a = 0
-		for x in range(self.width):
-			a = 0 if x%2 == 0 else 1
-			for y in range(self.height):
-				surface.blit(
-					# TILE_IMAGES[self.tiles[x][y].tile_type].image.convert(), 	# Source surface
-					TILE_IMAGES[a].image.convert(), 	# Source surface
-					self.tiles[x][y].position + offset, 						# Destination position
-					self.tile_rect		 										# Area
-				)
+	def rebuild_collision_map(self, data):
+		# Exit early when data is empty
+		if len(data) == 0: return
+
+		# Reset collisions map
+		self.collision_map = []
+
+		# Build collisions map, one pygame rect for each non-walkable tile
+		n = len(data[0])
+		m = len(data)
+		for x in range(n):
+			for y in range(m):
+				if data[y][x] not in TILES_INFO["walkable"]:
+					self.collision_map.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+
+	def render(self, surface):
+		tile = None
+		n = self.size[0]
+		m = self.size[1]
+		for i in range(n):
+			for j in range(m):
+				tile = self.tileset.tiles[self.map[i, j]]
+				surface.blit(tile, (j * 32, i * 32))
+
+	def set_zero(self):
+		self.map = np.zeros(self.size, dtype=int)
+
+	def set_random(self):
+		self.map = np.random.randint(len(self.tileset.tiles), size=self.size)
+
+	def set_from_file(self, file_name):
+		data = []
+		with open(file_name, "r") as fin:
+			for line in fin:
+				data.append([ int(x) for x in line.split() ])
+		self.map = np.array(data, dtype=int)
+		self.rebuild_collision_map(data)
+
+	def save_to_file(self):
+		with open("data/level.txt", "w") as fout:
+			for x in range(self.size[0]):
+				for y in range(self.size[1]):
+					fout.write(str(self.map[x, y]) + " ")
+				fout.write("\n")

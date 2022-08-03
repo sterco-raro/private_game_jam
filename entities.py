@@ -6,6 +6,7 @@ try:
 	import pygame
 
 	from utils import load_image
+	from constants import TILES_INFO, WORLD_WIDTH, WORLD_HEIGHT
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -37,7 +38,7 @@ class Player(Entity):
 	def __init__(self, position_xy):
 		super().__init__(position_xy, "player.png")
 
-	def update(self, dt):
+	def update(self, dt, collision_map):
 		pressed = pygame.key.get_pressed()
 		move = pygame.Vector2((0, 0))
 
@@ -48,5 +49,16 @@ class Player(Entity):
 
 		if move.length() > 0: move.normalize_ip()
 
-		self.position += move * (dt/3)
+		# Clamp player movement to map size
+		newposition = self.position + move * (dt/3)
+		x = min(WORLD_WIDTH - self.rect.width/2, max(0, newposition[0]))
+		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, newposition[1]))
+
+		# Check for possible collisions in the new position
+		for rect in collision_map:
+			if rect.collidepoint(x, y):
+				return
+
+		# No collisions, update player position
+		self.position = pygame.Vector2((x, y))
 		self.rect.center = self.position
