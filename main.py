@@ -133,8 +133,8 @@ def main():
 		all_sprites.draw(canvas)
 
 		# Debug collisions UI
-		for rect in tilemap.collision_map:
-			pygame.draw.rect(canvas, (40, 80, 200), rect, width=1)
+		# for rect in tilemap.collision_map:
+		# 	pygame.draw.rect(canvas, (40, 80, 200), rect, width=1)
 
 		# Done drawing stuff, blit everything to screen
 		viewport.blit(canvas, (0, 0), camera.rect)
