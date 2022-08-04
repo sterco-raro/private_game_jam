@@ -43,17 +43,21 @@ def main():
 	pygame.init()
 	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
 	pygame.display.set_caption("Giancarlo Pazzo Sgravato")
+	# Hide system cursor
+	pygame.mouse.set_visible(False)
 
 	# Initialize clock
 	clock = pygame.time.Clock()
 
-	# Static world surface (just a splash screen as of now)
-	world = load_image("background.png")
-	world = pygame.transform.scale(world, (WORLD_WIDTH, WORLD_HEIGHT))
+	# Splash screen
+	splash_screen = load_image("background.png")
+	splash_screen = pygame.transform.scale(splash_screen, (VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
 
-	# Holds the whole game world state
+	# Static world map
+	world = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
+
+	# Working canvas (World with sprites on)
 	canvas = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
-	canvas.fill((60, 60, 60))
 
 	# Game map
 	tilemap = Tilemap(Tileset("tileset.png"), size=(MAP_WIDTH, MAP_HEIGHT))
@@ -63,17 +67,22 @@ def main():
 
 	# Initialize entities
 	player = Player(position_xy=(320, 320))
+	mob1 = Mob((530,530), 250, player)
+	cursor = Cursor((0,0), camera)
+
+	hand1 = Weapon((0,0), player, 20, cursor)
+	hand2 = Weapon((0,0), player, -20, cursor)
 
 	# Rendering groups
-	all_sprites = pygame.sprite.RenderPlain(player)
+	all_sprites = pygame.sprite.RenderPlain(mob1)
 
 	# Debug HUD font
 	font = pygame.font.SysFont(None, 24)
 
 	# Draw the splash screen
-	viewport.blit(world, (0, 0))
-	debug_txt_coords = font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI INVIO)", True, (255, 255, 255))
-	viewport.blit(debug_txt_coords, (VIEWPORT_WIDTH/2 - 120, VIEWPORT_HEIGHT*3/4))
+	viewport.blit(splash_screen, (0, 0))
+	debug_txt = font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI INVIO)", True, (255, 255, 255))
+	viewport.blit(debug_txt, (VIEWPORT_WIDTH/2 - 120, VIEWPORT_HEIGHT*3/4))
 	pygame.display.flip()
 
 	# Miscellanea loop variables
@@ -90,7 +99,6 @@ def main():
 		for event in events:
 			if event.type == QUIT:
 				return
-
 			if event.type == KEYDOWN:
 				if event.key == K_RETURN:
 					running = False
@@ -116,13 +124,18 @@ def main():
 				if event.key == K_o:
 					tilemap.save_to_file()
 
-		# Clear temporary canvas
+		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
 
-		# Update sprites and camera position
-		# all_sprites.update()
+		# Logic updates
+		all_sprites.update(dt)
 		player.update(dt, tilemap.collision_map)
+
 		camera.update(player)
+		cursor.update()
+
+		hand1.update()
+		hand2.update()
 
 		# Only draw world map when needed (on changes)
 		if redraw_map:
@@ -132,6 +145,16 @@ def main():
 		# Draw sprites on temporary canvas
 		all_sprites.draw(canvas)
 
+		# Render weapons
+		canvas.blit(hand1.image, hand1.rect)
+		canvas.blit(hand2.image, hand2.rect)
+
+		# Render player sprite
+		canvas.blit(player.image, player.rect)
+
+		# Render crosshair cursor
+		canvas.blit(cursor.image, cursor.rect)
+
 		# Debug collisions UI
 		# for rect in tilemap.collision_map:
 		# 	pygame.draw.rect(canvas, (40, 80, 200), rect, width=1)
@@ -140,8 +163,8 @@ def main():
 		viewport.blit(canvas, (0, 0), camera.rect)
 
 		# Draw HUD
-		debug_txt_coords = font.render("Stai qua: ({}, {})".format(font_x, font_y), True, (255, 255, 255))
-		viewport.blit(debug_txt_coords, (20, 20))
+		debug_txt = font.render("Stai qua: ({}, {})".format(font_x, font_y), True, (255, 255, 255))
+		viewport.blit(debug_txt, (20, 20))
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
