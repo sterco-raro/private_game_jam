@@ -60,8 +60,11 @@ def game_over(surface, background, font):
 	# Loop waiting for user input
 	while 1:
 		for event in pygame.event.get():
-			if event.type == QUIT or event.type == KEYDOWN:
+			if event.type == QUIT:
 				return
+			if event.type == KEYDOWN:
+				if event.key == K_SPACE:
+					return
 
 
 # -------------------------------------------------------------------------------------------------
@@ -77,7 +80,7 @@ def main():
 
 	# Initialize screen
 	pygame.init()
-	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
+	viewport = pygame.display.set_mode(SCREEN_SIZE.size, pygame.FULLSCREEN)
 	pygame.display.set_caption("Giancarlo Pazzo Sgravato")
 	# Hide system cursor
 	pygame.mouse.set_visible(False)
@@ -151,6 +154,14 @@ def main():
 			if event.type == QUIT:
 				return
 
+			if event.type == KEYDOWN:
+				if event.key == K_r:
+					mob1 = Enemy((530, 530), file_name="geezer_2.png", enemy_id=1, speed=20, target=player, combat=CombatSystem(max_hp=4, base_attack=2, base_defense=0))
+					mob2 = Enemy((570, 570), file_name="barney.png", enemy_id=2, speed=26, target=player, combat=CombatSystem(max_hp=4, base_attack=3, base_defense=0))
+					mob3 = Enemy((580, 580), file_name="geezer_1.png", enemy_id=3, speed=20, target=player, combat=CombatSystem(max_hp=4, base_attack=2, base_defense=0))
+					mob4 = Enemy((620, 620), file_name="geezer_2.png", enemy_id=4, speed=20, target=player, combat=CombatSystem(max_hp=4, base_attack=2, base_defense=0))
+
+
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
 
@@ -168,10 +179,10 @@ def main():
 			redraw_map = False
 
 		# Render sprites
-		mob1.render(canvas)
-		mob2.render(canvas)
-		mob3.render(canvas)
-		mob4.render(canvas)
+		mob1.render(canvas, world)
+		mob2.render(canvas, world)
+		mob3.render(canvas, world)
+		mob4.render(canvas, world)
 		player.render(canvas)
 
 		# Debug collisions UI

@@ -109,7 +109,8 @@ class Player(Entity):
 		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-30)
 
 		# TODO TMP DEBUG show attack rect
-		self.attack_rect = None
+		self.attack_rect_1 = None
+		self.attack_rect_2 = None
 
 	def render(self, surface):
 		if not surface: return
@@ -120,9 +121,12 @@ class Player(Entity):
 		surface.blit(self.image, self.rect)
 
 		# TODO TMP DEBUG
-		if self.attack_rect:
-			pygame.draw.rect(surface, (220, 40, 160), self.attack_rect, width=2)
-			self.attack_rect = None
+		if self.attack_rect_1:
+			pygame.draw.rect(surface, (220, 40, 160), self.attack_rect_1, width=2)
+			self.attack_rect_1 = None
+		if self.attack_rect_2:
+			pygame.draw.rect(surface, (220, 40, 160), self.attack_rect_2, width=2)
+			self.attack_rect_2 = None
 
 		# Draw crosshair
 		surface.blit(self.cursor.image, self.cursor.rect)
@@ -154,10 +158,11 @@ class Player(Entity):
 		self.weapon_slot_right.update(self.cursor)
 
 	def use_left_hand(self, entities):
-		self.attack_rect = self.rect.inflate(12, 12)
+		self.attack_rect_1 = self.weapon_slot_left.rect.inflate(5, 5)
+		self.attack_rect_2 = self.weapon_slot_right.rect.inflate(5, 5)
 		# Check collisions between attack rect and entities
 		for entity in entities:
-			if self.attack_rect.colliderect(entity.rect):
+			if self.attack_rect_1.colliderect(entity.rect) or self.attack_rect_2.colliderect(entity.rect):
 				# Deal damage to colliding entities
 				self.combat.attack_target(entity)
 
@@ -184,11 +189,14 @@ class Enemy(Entity):
 		self.attacking = False
 		# Custom timers
 		self.ev_attack_cooldown = pygame.USEREVENT + enemy_id
+		# TODO TMP
+		self.corpse = load_image("corpse_generic.png")
 
-	def render(self, surface):
+	def render(self, surface, dead_surface):
 		if not surface:
 			return
 		if not self.combat.is_alive():
+			dead_surface.blit(self.corpse, self.rect)
 			return
 		surface.blit(self.image, self.rect)
 
