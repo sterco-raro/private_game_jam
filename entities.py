@@ -26,6 +26,9 @@ class Entity(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.position = pygame.Vector2(position_xy)
 
+	def flip_sprite(self):
+		self.image = pygame.transform.flip(self.image, True, False)
+
 
 # -------------------------------------------------------------------------------------------------
 
@@ -36,7 +39,8 @@ class Player(Entity):
 	Functions: update
 	Attributes: position_xy (starting position)"""
 	def __init__(self, position_xy):
-		super().__init__(position_xy, "player.png")
+		super().__init__(position_xy, "fatso.png")
+		self.flipped = False
 
 	def update(self, dt, collision_map):
 		pressed = pygame.key.get_pressed()
@@ -63,6 +67,13 @@ class Player(Entity):
 		self.position = pygame.Vector2((x, y))
 		self.rect.center = self.position
 
+		# Flip sprite when changing directions
+		if move[0] < 0 and self.flipped == False:
+			self.flip_sprite()
+			self.flipped = True
+		if move[0] > 0 and self.flipped == True:
+			self.flip_sprite()
+			self.flipped = False
 
 # -------------------------------------------------------------------------------------------------
 
@@ -72,7 +83,7 @@ class Mob(Entity):
 	Returns: mob object
 	Functions: update
 	Attributes: position_xy (starting position), sight_radius, target (who is the player?)"""
-	def __init__(self, position_xy, sight_radius, target, file_name="mob0.png"):
+	def __init__(self, position_xy, sight_radius, target, file_name="geezer1.png"):
 		super().__init__(position_xy, file_name)
 		
 		self.target = target
@@ -96,7 +107,7 @@ class Weapon(Entity):
 	Returns: weapon object
 	Functions: update
 	Attributes: position_xy, user, orbit_distance, target, file_name"""
-	def __init__(self, position_xy, user, orbit_distance=20, target=None, file_name="weap_hand_r.png"):
+	def __init__(self, position_xy, user, orbit_distance=20, target=None, file_name="weap_hand_L.png"):
 		super().__init__(position_xy, file_name)
 
 		self.user = user						# who is using this weapon?
@@ -117,7 +128,7 @@ class Weapon(Entity):
 			lookdir.normalize_ip()
 
 		weapon_position = lookdir * self.orbit_distance
-		rotation_angle = lookdir.angle_to((0, -1))
+		rotation_angle = lookdir.angle_to((0, 1))
 
 		self.rect.center = self.user.rect.center + weapon_position
 		self.image = pygame.transform.rotate(self.original_image, rotation_angle)

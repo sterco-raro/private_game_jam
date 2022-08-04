@@ -75,14 +75,15 @@ def main():
 
 	# Rendering groups
 	all_sprites = pygame.sprite.RenderPlain(mob1)
+	#ui_sprites = pygame.sprite.RenderPlain()
 
 	# Debug HUD font
 	font = pygame.font.SysFont(None, 24)
 
 	# Draw the splash screen
 	viewport.blit(splash_screen, (0, 0))
-	debug_txt = font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI INVIO)", True, (255, 255, 255))
-	viewport.blit(debug_txt, (VIEWPORT_WIDTH/2 - 120, VIEWPORT_HEIGHT*3/4))
+	debug_txt = font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI QUALCOSA)", True, (255, 255, 255))
+	viewport.blit(debug_txt, ((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4))
 	pygame.display.flip()
 
 	# Miscellanea loop variables
@@ -100,8 +101,7 @@ def main():
 			if event.type == QUIT:
 				return
 			if event.type == KEYDOWN:
-				if event.key == K_RETURN:
-					running = False
+				running = False
 
 	# Load map and render to the background
 	tilemap.set_from_file("data/level.txt")
