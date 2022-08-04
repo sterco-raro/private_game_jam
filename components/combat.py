@@ -52,14 +52,13 @@ class CombatSystem(object):
 			return 0
 		# Apply actual damage
 		damage = amount - self.defense
-		self.hp -= amount
+		self.hp -= damage
 
-	def attack(self, target):
+	def attack_target(self, target):
 		if not target.combat:
 			return
 		# Apply damage with modified attack
-		target.hurt(self.attack)
+		target.combat.hurt(self.attack)
 
 	def die(self):
-		self.is_alive = False
-		print("So morto...")
+		self.alive = False

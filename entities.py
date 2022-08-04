@@ -11,6 +11,7 @@ try:
 		WORLD_WIDTH, WORLD_HEIGHT
 	)
 	from components.combat import CombatSystem
+	from components.follower_ai import FollowerAI
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
@@ -43,10 +44,23 @@ class Entity(pygame.sprite.Sprite):
 			self.image = pygame.transform.flip(self.image, True, False)
 			self.flipped = False
 
-	def check_collisions(self, position_xy, collision_map):
-		"""Check for a collision between this entity's rect and collision_map list"""
-		for rect in collision_map:
+	def check_collisions_point(self, position_xy, collisions):
+		"""Check for a collision between this entity's rect and collisions rects list"""
+		for rect in collisions:
 			if rect.collidepoint(position_xy):
+				return True
+		return False
+
+	def check_collisions_rect(self, rect):
+		"""Check for a collision between this entity's rect and collisions rects list"""
+		if rect.colliderect(self.rect):
+			return True
+		return False
+
+	def check_collisions_rects(self, collisions):
+		"""Check for a collision between this entity's rect and collisions rects list"""
+		for rect in collisions:
+			if rect.colliderect(self.rect):
 				return True
 		return False
 
@@ -56,7 +70,7 @@ class Entity(pygame.sprite.Sprite):
 		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, position_xy[1]))
 		return pygame.Vector2(x, y)
 
-	def move_to(self, dt, direction, collision_map):
+	def move_to(self, dt, direction, collisions):
 		"""Try to move the current entity toward direction vector"""
 		# Normalize vector
 		if direction.length() > 0:
@@ -64,7 +78,7 @@ class Entity(pygame.sprite.Sprite):
 		# Calculate new position
 		new_position = self.position + direction * dt * self.speed/DAMPING_FACTOR
 		# Check for possible collisions
-		if self.check_collisions(new_position, collision_map):
+		if self.check_collisions_point(new_position, collisions):
 			return
 		# No collisions, update entity position
 		self.position = new_position
@@ -81,7 +95,11 @@ class Player(Entity):
 	Returns: player object
 	Functions: update
 	Attributes: /"""
-	def __init__(self, position_xy, file_name="fatso.png", speed=32, combat=CombatSystem()):
+	def __init__(
+		self,
+		position_xy, file_name="fatso.png", speed=32,	# Entity attributes
+		combat=CombatSystem()							# Player attributes
+	):
 		super().__init__(position_xy, file_name, speed)
 		# Fighting system
 		self.combat = combat
@@ -90,6 +108,9 @@ class Player(Entity):
 		self.weapon_slot_left 	= Weapon((0, 0), self, orbit_distance=20)
 		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-20)
 
+		# TODO TMP DEBUG show attack rect
+		self.attack_rect = None
+
 	def render(self, surface):
 		if not surface: return
 		# Draw player weapons
@@ -97,10 +118,16 @@ class Player(Entity):
 		surface.blit(self.weapon_slot_right.image, self.weapon_slot_right.rect)
 		# Draw player sprite
 		surface.blit(self.image, self.rect)
+
+		# TODO TMP DEBUG
+		if self.attack_rect:
+			pygame.draw.rect(surface, (220, 40, 160), self.attack_rect, width=2)
+			self.attack_rect = None
+
 		# Draw crosshair
 		surface.blit(self.cursor.image, self.cursor.rect)
 
-	def update(self, dt, collision_map, camera_position):
+	def update(self, dt, collisions, camera_position, entities):
 		# Mouse buttons state
 		mouse_left 		= None
 		mouse_middle 	= None
@@ -116,39 +143,81 @@ class Player(Entity):
 		if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: 	direction += ( 1,  0)
 		# if pressed click sinistro: attacca col sinistro, ecc
 		mouse_left, mouse_middle, mouse_right = pygame.mouse.get_pressed()
-		if mouse_left: print("SX")
-		if mouse_right: print("DX")
+		if mouse_left: self.use_left_hand(entities)
+		if mouse_right: self.use_right_hand(entities)
 		# Move sprite in calculated direction
-		self.move_to(dt, direction, collision_map)
+		self.move_to(dt, direction, collisions)
 		# Update crosshair
 		self.cursor.update(camera_position)
 		# Update player equipment
 		self.weapon_slot_left.update(self.cursor)
 		self.weapon_slot_right.update(self.cursor)
 
-	# def attack_left(self)
-	# def attack_right(self)
+	def use_left_hand(self, entities):
+		self.attack_rect = self.rect.inflate(12, 12)
+		# Check collisions between attack rect and entities
+		for entity in entities:
+			if self.attack_rect.colliderect(entity.rect):
+				# Deal damage to colliding entities
+				self.combat.attack_target(entity)
+
+	def use_right_hand(self):
+		print("DX")
 
 
 # -------------------------------------------------------------------------------------------------
 
 
-class Follower(Entity):
-	"""Mobile follower entity
-	Returns: object
-	Functions: update
-	Attributes: position_xy (starting position), sight_radius, target (who is the player?)"""
-	def __init__(self, position_xy, file_name="geezer1.png", speed=32, sight_radius=250, target=None):
+class Enemy(Entity):
+	"""TODO docstring for Enemy"""
+	def __init__(
+		self,
+		position_xy, file_name="geezer1.png", speed=28,			# Entity attributes
+		enemy_id=1, sight_radius=250, target=None, combat=CombatSystem()	# Enemy attributes
+	):
 		super().__init__(position_xy, file_name, speed)
-		self.target = target
-		self.sight_radius = sight_radius
+		# Components
+		self.combat = combat
+		self.follower = FollowerAI(parent=self, sight_radius=sight_radius, target=target)
+		# State: stop movements while colliding with the player (and attacking)
+		self.pause_movement = False
+		self.attacking = False
+		# Custom timers
+		self.ev_attack_cooldown = pygame.USEREVENT + enemy_id
 
-	def update(self, dt, collision_map):
-		# TODO check performance on magnitude()
-		direction = self.target.position - self.position
-		# Move only when target is in radius
-		if direction.magnitude() <= self.sight_radius:
-			self.move_to(dt, direction, collision_map)
+	def render(self, surface):
+		if not surface:
+			return
+		if not self.combat.is_alive():
+			return
+		surface.blit(self.image, self.rect)
+
+	def update(self, events, dt, collisions, player):
+
+		if not self.combat.is_alive():
+			return
+		if not self.follower:
+			return
+
+		for event in events:
+			if event.type == self.ev_attack_cooldown:
+				self.attacking = False
+
+		# Check collision with player entity to attack (and pause follower ai)
+		if not self.attacking:
+			if self.check_collisions_rect(player.rect):
+				self.attacking = True
+				self.pause_movement = True
+				# Restart attack cooldown
+				pygame.time.set_timer(self.ev_attack_cooldown, 1000, loops=1)
+				# Apply attack and stop following the player
+				self.combat.attack_target(player)
+			else:
+				self.pause_movement = False
+
+		# Move entity towards player while not colliding
+		if not self.pause_movement:
+			self.follower.update(dt, collisions)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -159,7 +228,7 @@ class Weapon(Entity):
 	Returns: weapon object
 	Functions: update
 	Attributes: position_xy, parent, orbit_distance, target, file_name"""
-	def __init__(self, position_xy, parent, orbit_distance=20, file_name="weap_hand_L.png"):
+	def __init__(self, position_xy, parent, file_name="weap_hand_L.png", orbit_distance=20, damage=1):
 		super().__init__(position_xy, file_name)
 
 		self.parent = parent						# who is using this weapon?
@@ -168,6 +237,8 @@ class Weapon(Entity):
 		if self.orbit_distance < 0:										# if weapon is on opposite side of parent
 			self.image = pygame.transform.flip(self.image, False, True)	# flip the image
 		self.original_image = self.image								# save a copy of this image for rendering rotations
+
+		self.damage = damage
 
 	def update(self, target):
 		if target is None:

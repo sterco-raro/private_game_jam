@@ -18,14 +18,50 @@ try:
 	from pygame.locals import *
 
 	from constants import *
-	from utils import load_image
+	from utils import load_image, rect_eq
 	from entities import *
 	from camera import SimpleCamera
 	from game_map import *
+	from components.combat import CombatSystem
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+def main_menu(surface, background, font):
+	# Setup rendering
+	surface.blit(background, (0, 0))
+	surface.blit(
+		font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI SPAZIO)", True, (255, 255, 255)),
+		((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4)
+	)
+	pygame.display.flip()
+	# Loop waiting for user input
+	while 1:
+		for event in pygame.event.get():
+			if event.type == QUIT:
+				return
+			if event.type == KEYDOWN:
+				if event.key == K_SPACE:
+					return
+
+def game_over(surface, background, font):
+	# Setup rendering
+	surface.blit(background, (0, 0))
+	surface.blit(
+		font.render("Ce l'hai fatta!", True, (255, 255, 255)),
+		((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4)
+	)
+	pygame.display.flip()
+	# Loop waiting for user input
+	while 1:
+		for event in pygame.event.get():
+			if event.type == QUIT or event.type == KEYDOWN:
+				return
 
 
 # -------------------------------------------------------------------------------------------------
@@ -67,37 +103,31 @@ def main():
 
 	# Initialize entities
 	player = Player(position_xy=(320, 320))
-	mob1 = Follower((530,530), speed=28, target=player)
+	mob1 = Enemy((530,530), enemy_id=1, speed=26, target=player, combat=CombatSystem(max_hp=1, base_attack=1, base_defense=0))
+	mob2 = Enemy((570,570), enemy_id=2, speed=22, target=player, combat=CombatSystem(max_hp=1, base_attack=2, base_defense=0))
 
 	# Rendering groups
 	# all_sprites = pygame.sprite.RenderPlain(mob1)
 	# ui_sprites = pygame.sprite.RenderPlain()
 
-	# Debug HUD font
+	# HUD font
 	font = pygame.font.SysFont(None, 24)
 
-	# Draw the splash screen
-	viewport.blit(splash_screen, (0, 0))
-	debug_txt = font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI QUALCOSA)", True, (255, 255, 255))
-	viewport.blit(debug_txt, ((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4))
-	pygame.display.flip()
-
 	# Miscellanea loop variables
-	dt = 0
-	font_x = 0
-	font_y = 0
-	events = None
-	redraw_map = False
-	running = True
+	dt 					= 0
+	font_x 				= 0
+	font_y 				= 0
+	events 				= None
+	redraw_map 			= False
+	running 			= True
+	hud_topleft 		= None
+	# hud_topright 		= None
+	# hud_bottomleft 		= None
+	# hud_bottomright 	= None
+	entities 			= [mob1, mob2]
 
-	# Main menu
-	while running:
-		events = pygame.event.get()
-		for event in events:
-			if event.type == QUIT:
-				return
-			if event.type == KEYDOWN:
-				running = False
+	# Render main menu and wait for user input
+	main_menu(viewport, splash_screen, font)
 
 	# Load map and render to the background
 	tilemap.set_from_file("data/level.txt")
@@ -105,27 +135,24 @@ def main():
 
 	# Game loop
 	while 1:
+		# Player is dead, setup game over screen
+		if not player.combat.is_alive():
+			game_over(viewport, splash_screen, font)
+			return
+
 		# Manage general pygame events
 		events = pygame.event.get()
 		for event in events:
 			if event.type == QUIT:
 				return
 
-			if event.type == KEYDOWN:
-				# Reload map data
-				if event.key == K_l:
-					tilemap.set_from_file("data/level.txt")
-					redraw_map = True
-				# Save map data to file
-				if event.key == K_o:
-					tilemap.save_to_file()
-
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
 
 		# Logic updates
-		mob1.update(dt, tilemap.collision_map)
-		player.update(dt, tilemap.collision_map, camera.rect.topleft)
+		mob1.update(events, dt, tilemap.collision_map, player)
+		mob2.update(events, dt, tilemap.collision_map, player)
+		player.update(dt, tilemap.collision_map, camera.rect.topleft, entities)
 		camera.update(player.rect)
 
 		# Only draw world map when needed (on changes)
@@ -133,11 +160,9 @@ def main():
 			tilemap.render(world)
 			redraw_map = False
 
-		# Draw sprites on temporary canvas
-		# all_sprites.draw(canvas)
-
 		# Render sprites
-		canvas.blit(mob1.image, mob1.rect)
+		mob1.render(canvas)
+		mob2.render(canvas)
 		player.render(canvas)
 
 		# Debug collisions UI
@@ -148,8 +173,8 @@ def main():
 		viewport.blit(canvas, (0, 0), camera.rect)
 
 		# Draw HUD
-		debug_txt = font.render("Stai qua: ({}, {})".format(font_x, font_y), True, (255, 255, 255))
-		viewport.blit(debug_txt, (20, 20))
+		hud_topleft = font.render("HP: {}/{}".format(player.combat.hp, player.combat.max_hp), True, (255, 255, 255))
+		viewport.blit(hud_topleft, (20, 20))
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
