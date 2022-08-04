@@ -10,6 +10,7 @@ try:
 		TILES_INFO,
 		WORLD_WIDTH, WORLD_HEIGHT
 	)
+	from components.combat import CombatSystem
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
@@ -80,10 +81,30 @@ class Player(Entity):
 	Returns: player object
 	Functions: update
 	Attributes: /"""
-	def __init__(self, position_xy, file_name="fatso.png", speed=32):
+	def __init__(self, position_xy, file_name="fatso.png", speed=32, combat=CombatSystem()):
 		super().__init__(position_xy, file_name, speed)
+		# Fighting system
+		self.combat = combat
+		# Equipment
+		self.cursor = Cursor((0, 0))
+		self.weapon_slot_left 	= Weapon((0, 0), self, orbit_distance=20)
+		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-20)
 
-	def update(self, dt, collision_map):
+	def render(self, surface):
+		if not surface: return
+		# Draw player weapons
+		surface.blit(self.weapon_slot_left.image, self.weapon_slot_left.rect)
+		surface.blit(self.weapon_slot_right.image, self.weapon_slot_right.rect)
+		# Draw player sprite
+		surface.blit(self.image, self.rect)
+		# Draw crosshair
+		surface.blit(self.cursor.image, self.cursor.rect)
+
+	def update(self, dt, collision_map, camera_position):
+		# Mouse buttons state
+		mouse_left 		= None
+		mouse_middle 	= None
+		mouse_right 	= None
 		# Key state
 		pressed = pygame.key.get_pressed()
 		# Movement direction
@@ -93,8 +114,20 @@ class Player(Entity):
 		if pressed[pygame.K_a] or pressed[pygame.K_LEFT]: 	direction += (-1,  0)
 		if pressed[pygame.K_s] or pressed[pygame.K_DOWN]: 	direction += ( 0,  1)
 		if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: 	direction += ( 1,  0)
+		# if pressed click sinistro: attacca col sinistro, ecc
+		mouse_left, mouse_middle, mouse_right = pygame.mouse.get_pressed()
+		if mouse_left: print("SX")
+		if mouse_right: print("DX")
 		# Move sprite in calculated direction
 		self.move_to(dt, direction, collision_map)
+		# Update crosshair
+		self.cursor.update(camera_position)
+		# Update player equipment
+		self.weapon_slot_left.update(self.cursor)
+		self.weapon_slot_right.update(self.cursor)
+
+	# def attack_left(self)
+	# def attack_right(self)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -125,30 +158,29 @@ class Weapon(Entity):
 	"""Weapon entity 
 	Returns: weapon object
 	Functions: update
-	Attributes: position_xy, user, orbit_distance, target, file_name"""
-	def __init__(self, position_xy, user, orbit_distance=20, target=None, file_name="weap_hand_L.png"):
+	Attributes: position_xy, parent, orbit_distance, target, file_name"""
+	def __init__(self, position_xy, parent, orbit_distance=20, file_name="weap_hand_L.png"):
 		super().__init__(position_xy, file_name)
 
-		self.user = user						# who is using this weapon?
-		self.orbit_distance = orbit_distance	# how far should the weapon orbit around the user
-		self.target = target					# towards what will we rotate the weapon?
+		self.parent = parent						# who is using this weapon?
+		self.orbit_distance = orbit_distance		# how far should the weapon orbit around the parent
 
-		if self.orbit_distance < 0:										# if weapon is on opposite side of user
+		if self.orbit_distance < 0:										# if weapon is on opposite side of parent
 			self.image = pygame.transform.flip(self.image, False, True)	# flip the image
 		self.original_image = self.image								# save a copy of this image for rendering rotations
 
-	def update(self):
-		if self.target is None:
+	def update(self, target):
+		if target is None:
 			lookdir = pygame.Vector2(-1, 0)
 		else:
-			lookdir = self.target.rect.center - self.user.position
+			lookdir = target.rect.center - self.parent.position
 			lookdir = lookdir.rotate(90)
 			lookdir.normalize_ip()
 
 		weapon_position = lookdir * self.orbit_distance
 		rotation_angle = lookdir.angle_to((0, 1))
 
-		self.rect.center = self.user.rect.center + weapon_position
+		self.rect.center = self.parent.rect.center + weapon_position
 		self.image = pygame.transform.rotate(self.original_image, rotation_angle)
 
 
@@ -160,14 +192,11 @@ class Cursor(Entity):
 	Returns: object
 	Functions: update
 	Attributes: none"""
-	def __init__(self, position_xy, viewport, file_name="cursor_crosshair.png"):
+	def __init__(self, position_xy, file_name="cursor_crosshair.png"):
 		super().__init__(position_xy, file_name)
-		# Camera
-		self.viewport = viewport
 
-	def update(self):
+	def update(self, camera_position):
 		cursor_position = pygame.mouse.get_pos()
-		camera_position = self.viewport.rect.topleft
 		# Update cursor position with viewport coordinates
 		self.rect.center = pygame.Vector2(	cursor_position[0] + camera_position[0],
 											cursor_position[1] + camera_position[1])

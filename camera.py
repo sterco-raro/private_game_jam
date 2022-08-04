@@ -19,10 +19,10 @@ class SimpleCamera(object):
 		self.width = w
 		self.height = h
 
-	def update(self, target):
+	def update(self, target_rect):
 		# Center camera to target position
-		x = target.rect.centerx - int(self.width/2)
-		y = target.rect.centery - int(self.height/2)
+		x = target_rect.centerx - int(self.width/2)
+		y = target_rect.centery - int(self.height/2)
 
 		# Clamp scrolling to map size
 		x = max(0, x) 							# left

@@ -68,14 +68,10 @@ def main():
 	# Initialize entities
 	player = Player(position_xy=(320, 320))
 	mob1 = Follower((530,530), speed=28, target=player)
-	cursor = Cursor((0,0), camera)
-
-	hand1 = Weapon((0,0), player, orbit_distance=20, target=cursor)
-	hand2 = Weapon((0,0), player, orbit_distance=-20, target=cursor)
 
 	# Rendering groups
 	# all_sprites = pygame.sprite.RenderPlain(mob1)
-	#ui_sprites = pygame.sprite.RenderPlain()
+	# ui_sprites = pygame.sprite.RenderPlain()
 
 	# Debug HUD font
 	font = pygame.font.SysFont(None, 24)
@@ -129,13 +125,8 @@ def main():
 
 		# Logic updates
 		mob1.update(dt, tilemap.collision_map)
-		player.update(dt, tilemap.collision_map)
-
-		camera.update(player)
-		cursor.update()
-
-		hand1.update()
-		hand2.update()
+		player.update(dt, tilemap.collision_map, camera.rect.topleft)
+		camera.update(player.rect)
 
 		# Only draw world map when needed (on changes)
 		if redraw_map:
@@ -145,16 +136,9 @@ def main():
 		# Draw sprites on temporary canvas
 		# all_sprites.draw(canvas)
 
-		# Render weapons
-		canvas.blit(hand1.image, hand1.rect)
-		canvas.blit(hand2.image, hand2.rect)
-
 		# Render sprites
 		canvas.blit(mob1.image, mob1.rect)
-		canvas.blit(player.image, player.rect)
-
-		# Render crosshair cursor
-		canvas.blit(cursor.image, cursor.rect)
+		player.render(canvas)
 
 		# Debug collisions UI
 		# for rect in tilemap.collision_map:
