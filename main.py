@@ -66,6 +66,9 @@ def main():
 	mob1 = Mob((530,530), 250, player)
 	cursor = Cursor((0,0), camera)
 
+	hand1 = Weapon((0,0), player, 20, cursor)
+	hand2 = Weapon((0,0), player, -20, cursor)
+
 	# Rendering groups
 	player_sprites = pygame.sprite.RenderPlain(mob1, player)
 
@@ -93,21 +96,28 @@ def main():
 		world.blit(black_surface, player.rect, player.rect)
 		world.blit(black_surface, mob1.rect, mob1.rect)
 		world.blit(black_surface, cursor.rect, cursor.rect)
+		world.blit(black_surface, hand1.rect.inflate(6,6), hand1.rect.inflate(6,6))
+		world.blit(black_surface, hand2.rect.inflate(6,6), hand2.rect.inflate(6,6))
 		
 		# Clear debug font position
 		viewport.blit(world, (20, 20))
+
 		# Update sprites
 		player_sprites.update(dt)
-
-		# Re-draw things on viewport
-		player_sprites.draw(world)
 
 		# Update camera position
 		camera.update(player)
 
-		# Update & render cursor
+		# Update shit
 		cursor.update()
+		hand1.update()
+		hand2.update()
+		
+		# render everything
+		world.blit(hand1.image, hand1.rect)
+		world.blit(hand2.image, hand2.rect)
 		world.blit(cursor.image, cursor.rect)
+		player_sprites.draw(world)
 
 		# Draw viewport
 		viewport.blit(world, (0, 0), camera.rect)

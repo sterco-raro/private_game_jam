@@ -69,7 +69,40 @@ class Mob(Entity):
 			movedir.normalize_ip()
 			self.position += movedir * (dt/10)
 			self.rect.center = self.position
-		
+
+class Weapon(Entity):
+	"""Weapon entity 
+	Returns: weapon object
+	Functions: update
+	Attributes: position_xy, user, orbit_distance, target, image"""
+	def __init__(self, position_xy, user, orbit_distance=20, target=None, image="weap_hand_r.png"):
+		super().__init__(position_xy, image)
+
+		self.user = user						# who is using this weapon?
+		self.orbit_distance = orbit_distance	# how far should the weapon orbit around the user
+		self.target = target					# towards what will we rotate the weapon?
+
+		if self.orbit_distance < 0:										# if weapon is on opposite side of user
+			self.image = pygame.transform.flip(self.image, False, True)	# flip the image
+		self.original_image = self.image								# save a copy of this image for rendering rotations
+
+	def update(self):
+		if self.target == None:
+			lookdir = pygame.Vector2(-1,0)
+		else:
+			lookdir = pygame.Vector2(self.target.rect.center[0] - self.user.position.x, 
+									 self.target.rect.center[1] - self.user.position.y)
+			lookdir = lookdir.rotate(90)
+			lookdir.normalize_ip()
+
+		weapon_position = lookdir * self.orbit_distance
+		rotation_angle = lookdir.angle_to((0,-1))
+
+		self.rect.center = self.user.rect.center + weapon_position
+		self.image = pygame.transform.rotate(self.original_image, rotation_angle)
+
+
+
 
 # -------------------------------------------------------------------------------------------------
 
@@ -90,6 +123,3 @@ class Cursor(Entity):
 						 cursor_position[1] + camera_position[1])
 
 		self.rect.center = offset_cursor
-
-		# shouldn't we make this work? 
-		#self.position = offset_cursor
