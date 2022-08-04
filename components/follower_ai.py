@@ -1,3 +1,5 @@
+import random
+
 
 class FollowerAI(object):
 	"""TODO docstring for FollowerAI"""
@@ -18,7 +20,9 @@ class FollowerAI(object):
 		# TODO check performance for Vector2.magnitude()
 		if not self.target:
 			return
-		direction = self.target.position - self.parent.position
+		position = (self.target.position[0] + random.randint(-120, 120),
+					self.target.position[1] + random.randint(-120, 120))
+		direction = position - self.parent.position
 		# Move only when target is in radius
 		if direction.magnitude() <= self.sight_radius:
 			self.parent.move_to(dt, direction, collision_map)

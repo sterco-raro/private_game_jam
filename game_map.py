@@ -58,6 +58,9 @@ class Tilemap(object):
 		self.map = None
 		self.collision_map = []
 
+		self.tile_floor = load_image("floor_1.png")
+		self.tile_wall = load_image("wall_1.png")
+
 	def rebuild_collision_map(self, data):
 		# Exit early when data is empty
 		if len(data) == 0: return
@@ -79,8 +82,12 @@ class Tilemap(object):
 		m = self.size[1]
 		for i in range(n):
 			for j in range(m):
-				tile = self.tileset.tiles[self.map[i, j]]
-				surface.blit(tile, (j * 32, i * 32))
+#				tile = self.tileset.tiles[self.map[i, j]]
+				if self.map[i, j] == 7:
+					tile = self.tile_floor
+				else:
+					tile = self.tile_wall
+				surface.blit(tile, (j * TILE_SIZE, i * TILE_SIZE))
 
 	def set_zero(self):
 		self.map = np.zeros(self.size, dtype=int)

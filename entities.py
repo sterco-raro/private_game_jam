@@ -105,8 +105,8 @@ class Player(Entity):
 		self.combat = combat
 		# Equipment
 		self.cursor = Cursor((0, 0))
-		self.weapon_slot_left 	= Weapon((0, 0), self, orbit_distance=20)
-		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-20)
+		self.weapon_slot_left 	= Weapon((0, 0), self, orbit_distance=30)
+		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-30)
 
 		# TODO TMP DEBUG show attack rect
 		self.attack_rect = None
@@ -172,7 +172,7 @@ class Enemy(Entity):
 	"""TODO docstring for Enemy"""
 	def __init__(
 		self,
-		position_xy, file_name="geezer1.png", speed=28,			# Entity attributes
+		position_xy, file_name="geezer_1.png", speed=28,			# Entity attributes
 		enemy_id=1, sight_radius=250, target=None, combat=CombatSystem()	# Enemy attributes
 	):
 		super().__init__(position_xy, file_name, speed)
