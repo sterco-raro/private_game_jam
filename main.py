@@ -74,7 +74,7 @@ def main():
 	hand2 = Weapon((0,0), player, orbit_distance=-20, target=cursor)
 
 	# Rendering groups
-	all_sprites = pygame.sprite.RenderPlain(mob1)
+	# all_sprites = pygame.sprite.RenderPlain(mob1)
 	#ui_sprites = pygame.sprite.RenderPlain()
 
 	# Debug HUD font
@@ -143,13 +143,14 @@ def main():
 			redraw_map = False
 
 		# Draw sprites on temporary canvas
-		all_sprites.draw(canvas)
+		# all_sprites.draw(canvas)
 
 		# Render weapons
 		canvas.blit(hand1.image, hand1.rect)
 		canvas.blit(hand2.image, hand2.rect)
 
-		# Render player sprite
+		# Render sprites
+		canvas.blit(mob1.image, mob1.rect)
 		canvas.blit(player.image, player.rect)
 
 		# Render crosshair cursor
