@@ -43,6 +43,9 @@ def main():
 	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
 	pygame.display.set_caption("Private Game Jam")
 
+	# Hide system cursor
+	pygame.mouse.set_visible(False)
+
 	# Fill a black background as our world level
 	world = pygame.Surface((1000, 1000))
 	world = world.convert()
@@ -60,9 +63,11 @@ def main():
 
 	# Initialize entities
 	player = Player(position_xy=(484, 484))
+	mob1 = Mob((530,530), 250, player)
+	cursor = Cursor((0,0), camera)
 
 	# Rendering groups
-	player_sprites = pygame.sprite.RenderPlain(player)
+	player_sprites = pygame.sprite.RenderPlain(mob1, player)
 
 	# Initialize clock
 	clock = pygame.time.Clock()
@@ -86,6 +91,9 @@ def main():
 
 		# Clear current player position
 		world.blit(black_surface, player.rect, player.rect)
+		world.blit(black_surface, mob1.rect, mob1.rect)
+		world.blit(black_surface, cursor.rect, cursor.rect)
+		
 		# Clear debug font position
 		viewport.blit(world, (20, 20))
 		# Update sprites
@@ -96,6 +104,11 @@ def main():
 
 		# Update camera position
 		camera.update(player)
+
+		# Update & render cursor
+		cursor.update()
+		world.blit(cursor.image, cursor.rect)
+
 		# Draw viewport
 		viewport.blit(world, (0, 0), camera.rect)
 
@@ -107,8 +120,8 @@ def main():
 
 		# FPS limit and keep deltatime
 		dt = clock.tick(60)
-		font_x = int(player.position[0])
-		font_y = int(player.position[1])
+		font_x = int(mob1.position[0])
+		font_y = int(mob1.position[1])
 
 
 # -------------------------------------------------------------------------------------------------
