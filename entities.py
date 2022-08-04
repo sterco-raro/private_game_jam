@@ -4,10 +4,12 @@
 try:
 	import sys
 	import pygame
-
 	from utils import load_image
-	from constants import TILES_INFO, WORLD_WIDTH, WORLD_HEIGHT
-
+	from constants import (
+		DAMPING_FACTOR,
+		TILES_INFO,
+		WORLD_WIDTH, WORLD_HEIGHT
+	)
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
@@ -20,14 +22,54 @@ class Entity(pygame.sprite.Sprite):
 	"""Generic entity
 	Returns: object
 	Attributes: position_xy (starting position), file_name (sprite file name)"""
-	def __init__(self, position_xy, file_name):
+	def __init__(self, position_xy, file_name, speed=32):
 		pygame.sprite.Sprite.__init__(self)
+		# Sprite
 		self.image = load_image(file_name)
 		self.rect = self.image.get_rect()
+		# Movement
+		self.speed = speed
 		self.position = pygame.Vector2(position_xy)
+		# Flip sprite control
+		self.flipped = False
 
-	def flip_sprite(self):
-		self.image = pygame.transform.flip(self.image, True, False)
+	def flip_sprite(self, is_moving_left):
+		"""Flip sprite when changing directions"""
+		if is_moving_left and not self.flipped:
+			self.image = pygame.transform.flip(self.image, True, False)
+			self.flipped = True
+		elif not is_moving_left and self.flipped:
+			self.image = pygame.transform.flip(self.image, True, False)
+			self.flipped = False
+
+	def check_collisions(self, position_xy, collision_map):
+		"""Check for a collision between this entity's rect and collision_map list"""
+		for rect in collision_map:
+			if rect.collidepoint(position_xy):
+				return True
+		return False
+
+	def clamp_to_map(self, position_xy):
+		"""Clamp position_xy vector to world map area, returns the clamped vector"""
+		x = min(WORLD_WIDTH - self.rect.width/2, max(0, position_xy[0]))
+		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, position_xy[1]))
+		return pygame.Vector2(x, y)
+
+	def move_to(self, dt, direction, collision_map):
+		"""Try to move the current entity toward direction vector"""
+		# Normalize vector
+		if direction.length() > 0:
+			direction.normalize_ip()
+		# Calculate new position
+		new_position = self.position + direction * dt * self.speed/DAMPING_FACTOR
+		# Check for possible collisions
+		if self.check_collisions(new_position, collision_map):
+			return
+		# No collisions, update entity position
+		self.position = new_position
+		self.rect.center = self.position
+		# Flip sprite when moving along the X axis
+		self.flip_sprite(direction[0] < 0)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -37,66 +79,43 @@ class Player(Entity):
 	"""Player entity
 	Returns: player object
 	Functions: update
-	Attributes: position_xy (starting position)"""
-	def __init__(self, position_xy):
-		super().__init__(position_xy, "fatso.png")
-		self.flipped = False
+	Attributes: /"""
+	def __init__(self, position_xy, file_name="fatso.png", speed=32):
+		super().__init__(position_xy, file_name, speed)
 
 	def update(self, dt, collision_map):
+		# Key state
 		pressed = pygame.key.get_pressed()
-		move = pygame.Vector2((0, 0))
+		# Movement direction
+		direction = pygame.Vector2((0, 0))
+		# Get direction based on keys pressed
+		if pressed[pygame.K_w] or pressed[pygame.K_UP]: 	direction += ( 0, -1)
+		if pressed[pygame.K_a] or pressed[pygame.K_LEFT]: 	direction += (-1,  0)
+		if pressed[pygame.K_s] or pressed[pygame.K_DOWN]: 	direction += ( 0,  1)
+		if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: 	direction += ( 1,  0)
+		# Move sprite in calculated direction
+		self.move_to(dt, direction, collision_map)
 
-		if pressed[pygame.K_w] or pressed[pygame.K_UP]: move += (0, -1)
-		if pressed[pygame.K_a] or pressed[pygame.K_LEFT]: move += (-1, 0)
-		if pressed[pygame.K_s] or pressed[pygame.K_DOWN]: move += (0, 1)
-		if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: move += (1, 0)
-
-		if move.length() > 0: move.normalize_ip()
-
-		# Clamp player movement to map size
-		newposition = self.position + move * (dt/3)
-		x = min(WORLD_WIDTH - self.rect.width/2, max(0, newposition[0]))
-		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, newposition[1]))
-
-		# Check for possible collisions in the new position
-		for rect in collision_map:
-			if rect.collidepoint(x, y):
-				return
-
-		# No collisions, update player position
-		self.position = pygame.Vector2((x, y))
-		self.rect.center = self.position
-
-		# Flip sprite when changing directions
-		if move[0] < 0 and self.flipped == False:
-			self.flip_sprite()
-			self.flipped = True
-		if move[0] > 0 and self.flipped == True:
-			self.flip_sprite()
-			self.flipped = False
 
 # -------------------------------------------------------------------------------------------------
 
 
-class Mob(Entity):
-	"""Mobile entity
-	Returns: mob object
+class Follower(Entity):
+	"""Mobile follower entity
+	Returns: object
 	Functions: update
 	Attributes: position_xy (starting position), sight_radius, target (who is the player?)"""
-	def __init__(self, position_xy, sight_radius, target, file_name="geezer1.png"):
-		super().__init__(position_xy, file_name)
-		
+	def __init__(self, position_xy, file_name="geezer1.png", speed=32, sight_radius=250, target=None):
+		super().__init__(position_xy, file_name, speed)
 		self.target = target
 		self.sight_radius = sight_radius
 
-	def update(self, dt):
-		"""TODO check performance on magnitude()"""
-		movedir = pygame.math.Vector2(self.target.position[0] - self.position.x, 
-									  self.target.position[1] - self.position.y)
-		if movedir.magnitude() <= self.sight_radius:
-			movedir.normalize_ip()
-			self.position += movedir * (dt/10)
-			self.rect.center = self.position
+	def update(self, dt, collision_map):
+		# TODO check performance on magnitude()
+		direction = self.target.position - self.position
+		# Move only when target is in radius
+		if direction.magnitude() <= self.sight_radius:
+			self.move_to(dt, direction, collision_map)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -119,11 +138,10 @@ class Weapon(Entity):
 		self.original_image = self.image								# save a copy of this image for rendering rotations
 
 	def update(self):
-		if self.target == None:
+		if self.target is None:
 			lookdir = pygame.Vector2(-1, 0)
 		else:
-			lookdir = pygame.Vector2(self.target.rect.center[0] - self.user.position.x, 
-									 self.target.rect.center[1] - self.user.position.y)
+			lookdir = self.target.rect.center - self.user.position
 			lookdir = lookdir.rotate(90)
 			lookdir.normalize_ip()
 
@@ -139,16 +157,17 @@ class Weapon(Entity):
 
 class Cursor(Entity):
 	"""Cursor entity that follows mouse movement
-	Returns: cursor object
+	Returns: object
 	Functions: update
 	Attributes: none"""
 	def __init__(self, position_xy, viewport, file_name="cursor_crosshair.png"):
 		super().__init__(position_xy, file_name)
+		# Camera
 		self.viewport = viewport
 
 	def update(self):
 		cursor_position = pygame.mouse.get_pos()
 		camera_position = self.viewport.rect.topleft
-
-		self.rect.center = (cursor_position[0] + camera_position[0],
-							cursor_position[1] + camera_position[1])
+		# Update cursor position with viewport coordinates
+		self.rect.center = pygame.Vector2(	cursor_position[0] + camera_position[0],
+											cursor_position[1] + camera_position[1])

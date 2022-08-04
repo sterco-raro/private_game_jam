@@ -18,6 +18,9 @@ SCREEN_SIZE = pygame.Rect((0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
 
 CAMERA_SMOOTHNESS = 0.05
 
+# Movement speed damping factor
+DAMPING_FACTOR = 100
+
 TILES_INFO = {
 	"walkable": [7, 10, 37],
 }

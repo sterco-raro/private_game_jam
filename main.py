@@ -67,11 +67,11 @@ def main():
 
 	# Initialize entities
 	player = Player(position_xy=(320, 320))
-	mob1 = Mob((530,530), 250, player)
+	mob1 = Follower((530,530), speed=28, target=player)
 	cursor = Cursor((0,0), camera)
 
-	hand1 = Weapon((0,0), player, 20, cursor)
-	hand2 = Weapon((0,0), player, -20, cursor)
+	hand1 = Weapon((0,0), player, orbit_distance=20, target=cursor)
+	hand2 = Weapon((0,0), player, orbit_distance=-20, target=cursor)
 
 	# Rendering groups
 	all_sprites = pygame.sprite.RenderPlain(mob1)
@@ -128,7 +128,7 @@ def main():
 		canvas.blit(world, (0, 0))
 
 		# Logic updates
-		all_sprites.update(dt)
+		mob1.update(dt, tilemap.collision_map)
 		player.update(dt, tilemap.collision_map)
 
 		camera.update(player)
