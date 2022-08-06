@@ -2,7 +2,7 @@
 
 class CombatSystem(object):
 	"""TODO docstring for CombatSystem"""
-	def __init__(self, max_hp=8, base_attack=1, base_defense=1):
+	def __init__(self, max_hp=1, base_attack=1, base_defense=0):
 		# Health
 		self._hp = max_hp
 		self.max_hp = max_hp

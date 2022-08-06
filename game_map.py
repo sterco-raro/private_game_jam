@@ -1,4 +1,4 @@
-# Dungeon generator
+# Game map
 
 
 try:
@@ -7,7 +7,7 @@ try:
 	import pygame
 	import numpy as np
 	from enum import auto, Enum
-	from constants import TILE_SIZE, TILES_INFO
+	from constants import TILE_SIZE, TILES_INFO, DBG_COLLISION_TILES
 	from utils import load_image
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -52,7 +52,7 @@ class Tileset(object):
 
 class Tilemap(object):
 	"""TODO docstring for Tilemap"""
-	def __init__(self, tileset, size=(10, 20)):
+	def __init__(self, tileset, size=(10, 20), file_name=None):
 		self.size = size
 		self.tileset = tileset
 		self.map = None
@@ -60,6 +60,9 @@ class Tilemap(object):
 
 		self.tile_floor = load_image("floor_1.png")
 		self.tile_wall = load_image("wall_1.png")
+
+		if file_name:
+			self.set_from_file(file_name)
 
 	def rebuild_collision_map(self, data):
 		# Exit early when data is empty
@@ -76,18 +79,23 @@ class Tilemap(object):
 				if data[y][x] not in TILES_INFO["walkable"]:
 					self.collision_map.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
-	def render(self, surface):
+	def render(self, surface, show_collision_rects):
 		tile = None
 		n = self.size[0]
 		m = self.size[1]
 		for i in range(n):
 			for j in range(m):
-#				tile = self.tileset.tiles[self.map[i, j]]
+				# tile = self.tileset.tiles[self.map[i, j]]
+				# Choose correct map tile
 				if self.map[i, j] == 7:
 					tile = self.tile_floor
 				else:
 					tile = self.tile_wall
+				# Draw current tile on surface
 				surface.blit(tile, (j * TILE_SIZE, i * TILE_SIZE))
+				# Draw collision layer when necessary
+				if show_collision_rects:
+					pygame.draw.rect(surface, DBG_COLLISION_TILES, tile.get_rect(), width=1)
 
 	def set_zero(self):
 		self.map = np.zeros(self.size, dtype=int)

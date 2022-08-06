@@ -6,6 +6,14 @@ Boia de
 
 Life's hard, you're angry. Enjoy
 
+## Controls
+
+- movement: WASD
+- cursor: mouse
+- attack: mouse left button
+- reset world state: keyboard r (resets enemies for now)
+- debug: show collisions rectangles: keyboard k
+
 ## Dev Run
 
 #### Linux

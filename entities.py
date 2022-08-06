@@ -8,7 +8,8 @@ try:
 	from constants import (
 		DAMPING_FACTOR,
 		TILES_INFO,
-		WORLD_WIDTH, WORLD_HEIGHT
+		WORLD_WIDTH, WORLD_HEIGHT,
+		DBG_COLLISION_PLAYER, DBG_COLLISION_ENEMY
 	)
 	from components.combat import CombatSystem
 	from components.follower_ai import FollowerAI
@@ -112,7 +113,7 @@ class Player(Entity):
 		self.attack_rect_1 = None
 		self.attack_rect_2 = None
 
-	def render(self, surface):
+	def render(self, surface, show_collision_rects):
 		if not surface: return
 		# Draw player weapons
 		surface.blit(self.weapon_slot_left.image, self.weapon_slot_left.rect)
@@ -121,12 +122,10 @@ class Player(Entity):
 		surface.blit(self.image, self.rect)
 
 		# TODO TMP DEBUG
-		if self.attack_rect_1:
-			pygame.draw.rect(surface, (220, 40, 160), self.attack_rect_1, width=2)
-			self.attack_rect_1 = None
-		if self.attack_rect_2:
-			pygame.draw.rect(surface, (220, 40, 160), self.attack_rect_2, width=2)
-			self.attack_rect_2 = None
+		# Draw collision layer for each attacking hand
+		if show_collision_rects:
+			pygame.draw.rect(surface, DBG_COLLISION_PLAYER, self.weapon_slot_left.rect, width=1)
+			pygame.draw.rect(surface, DBG_COLLISION_PLAYER, self.weapon_slot_right.rect, width=1)
 
 		# Draw crosshair
 		surface.blit(self.cursor.image, self.cursor.rect)
@@ -166,7 +165,7 @@ class Player(Entity):
 				# Deal damage to colliding entities
 				self.combat.attack_target(entity)
 
-	def use_right_hand(self):
+	def use_right_hand(self, entities):
 		print("DX")
 
 
@@ -192,13 +191,18 @@ class Enemy(Entity):
 		# TODO TMP
 		self.corpse = load_image("corpse_generic.png")
 
-	def render(self, surface, dead_surface):
-		if not surface:
-			return
+	def render(self, surface, dead_surface, show_collision_rects):
+		# Exit early when surface is None
+		if not surface: return
+		# Render corpse to different surface when entity is dead
 		if not self.combat.is_alive():
 			dead_surface.blit(self.corpse, self.rect)
 			return
+		# Draw this entity
 		surface.blit(self.image, self.rect)
+		# Draw collision layer
+		if show_collision_rects:
+			pygame.draw.rect(surface, DBG_COLLISION_ENEMY, self.rect, width=1)
 
 	def update(self, events, dt, collisions, player):
 
