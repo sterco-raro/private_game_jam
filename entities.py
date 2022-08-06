@@ -198,12 +198,13 @@ class Enemy(Entity):
 		# Render corpse to different surface when entity is dead
 		if not self.combat.is_alive():
 			dead_surface.blit(self.corpse, self.rect)
-			return
+			return True
 		# Draw this entity
 		surface.blit(self.image, self.rect)
 		# Draw collision layer
 		if show_collision_rects:
 			pygame.draw.rect(surface, DBG_COLLISION_ENEMY, self.rect, width=1)
+		return False
 
 	def update(self, events, dt, collisions, player):
 

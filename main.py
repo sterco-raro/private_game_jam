@@ -125,19 +125,28 @@ def main():
 	print("\n\nPRIVATE GAME JAM. Version: {}\n".format(GAME_VERSION))
 
 	# Main() "global" variables
-	clock 				= None	# pygame.time.Clock
-	world 				= None	# pygame.Surface, holds world map
-	canvas	 			= None	# pygame.Surface, used to compose game screen before blitting to the viewport
-	viewport 			= None	# pygame.Surface, window screen: render things currently visible by the player
-	debug_collisions 	= False	# shows collision rectangles
-	first_iteration		= True 	# TODO HACK: heal player on first loop iteration (BUG: player starts with 6/8 HP)
-	dt 					= 0 	# amount of time passed since last loop iteration
-	events 				= None	# pygame.events queue
-	redraw_world 		= False	# the world map will render on next loop iteration
-	hud_topleft 		= None	# pygame.Surface, holds the top-left section of the HUD
-	# hud_topright 		= None	# pygame.Surface, holds the top-right section of the HUD
-	# hud_bottomleft 		= None	# pygame.Surface, holds the bottom-left section of the HUD
-	# hud_bottomright 	= None	# pygame.Surface, holds the bottom-right section of the HUD
+	clock 					= None	# pygame.time.Clock
+
+	world 					= None	# pygame.Surface, holds world map
+	canvas	 				= None	# pygame.Surface, used to compose game screen before blitting to the viewport
+	viewport 				= None	# pygame.Surface, window screen: render things currently visible by the player
+
+	debug_collisions 		= False	# shows collision rectangles
+	first_iteration			= True 	# TODO HACK: heal player on first loop iteration (BUG: player starts with 6/8 HP)
+	dt 						= 0 	# amount of time passed since last loop iteration
+	events 					= None	# pygame.events queue
+	redraw_world 			= False	# the world map will render on next loop iteration
+
+	kill_count 				= 0 	# Player kills counter
+
+	hud_topleft 			= None	# pygame.Surface, holds the top-left section of the HUD
+	hud_topright 			= None	# pygame.Surface, holds the top-right section of the HUD
+	# hud_bottomleft 			= None	# pygame.Surface, holds the bottom-left section of the HUD
+	# hud_bottomright 		= None	# pygame.Surface, holds the bottom-right section of the HUD
+	hud_topleft_text 		= None
+	hud_topright_text 		= None
+	# hud_topleft_offset 	= 0
+	hud_topright_offset_x 	= 0
 
 	# Initialize pygame and window
 	pygame.init()
@@ -211,16 +220,30 @@ def main():
 			redraw_world = False
 
 		# Render sprites
-		for enemy in enemies:
-			enemy.render(canvas, world, debug_collisions)
+		dead = False
+		for i in range(len(enemies) - 1):
+			# HACK: render will return True when the enemy dies so we can erase its reference
+			dead = enemies[i].render(canvas, world, debug_collisions)
+			if dead:
+				kill_count += 1
+				enemies.pop(i)
 		player.render(canvas, debug_collisions)
 
 		# Done drawing stuff, blit everything to screen
 		viewport.blit(canvas, (0, 0), camera.rect)
 
 		# Draw HUD
-		hud_topleft = font_hud.render("HP: {}/{}".format(player.combat.hp, player.combat.max_hp), True, (0, 0, 0))
-		viewport.blit(hud_topleft, (20, 20))
+		hud_topleft_text = "HP {}/{}".format(player.combat.hp, player.combat.max_hp)
+		hud_topright_text = "{} Kills".format(kill_count)
+
+		hud_topleft = font_hud.render(hud_topleft_text, True, (0, 0, 0))
+		hud_topright = font_hud.render(hud_topright_text, True, (0, 0, 0))
+
+		# hud_topleft_offset = font_hud.size(hud_topleft_text)
+		hud_topright_offset_x = font_hud.size(hud_topright_text)[0] + 10
+
+		viewport.blit(hud_topleft, (10, 10))
+		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_offset_x, 10))
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
