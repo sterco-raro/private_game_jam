@@ -1,4 +1,4 @@
-# Combat
+# Combat system
 
 class CombatSystem(object):
 	"""TODO docstring for CombatSystem"""

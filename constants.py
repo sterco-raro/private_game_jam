@@ -1,3 +1,4 @@
+# Gamae constants
 
 import pygame
 

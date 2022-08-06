@@ -80,7 +80,7 @@ def main():
 
 	# Initialize screen
 	pygame.init()
-	viewport = pygame.display.set_mode(SCREEN_SIZE.size, pygame.FULLSCREEN)
+	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
 	pygame.display.set_caption("Giancarlo Pazzo Sgravato")
 	# Hide system cursor
 	pygame.mouse.set_visible(False)
