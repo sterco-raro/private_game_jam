@@ -75,7 +75,7 @@ def game_over(surface, background, font):
 
 def spawn_player():
 	_combat = CombatSystem(max_hp=8, base_attack=2, base_defense=1)
-	return Player(position_xy=(300, 300), combat=_combat)
+	return Player(position_xy=(8 * TILE_SIZE, 8 * TILE_SIZE), combat=_combat)
 
 
 def spawn_enemies(player, how_many=4):
@@ -86,8 +86,23 @@ def spawn_enemies(player, how_many=4):
 	entities_number = len(ENEMIES)
 
 	# TODO random position inside arena
-
 	for n in range(how_many):
+		x = 0
+		y = 0
+		distance_x = 0
+		distance_y = 0
+		position_found = False
+
+		while not position_found:
+			x = random.randint(TILE_SIZE, WORLD_WIDTH - TILE_SIZE)
+			y = random.randint(TILE_SIZE, WORLD_WIDTH - TILE_SIZE)
+
+			distance_x = abs(x - player.position[0])
+			distance_y = abs(y - player.position[1])
+
+			if distance_x >= 4 * TILE_SIZE and distance_y >= 4 * TILE_SIZE:
+				position_found = True
+
 		# Choose a random enemy in previously made list
 		chosen_entity = ENEMIES[random.randint(0, entities_number - 1)]
 
@@ -96,7 +111,7 @@ def spawn_enemies(player, how_many=4):
 								base_attack=chosen_entity["base_attack"],
 								base_defense=chosen_entity["base_defense"])
 		# Create enemy and append to output list
-		enemies.append(Enemy(	position_xy=(500, 500), file_name=chosen_entity["sprite"],
+		enemies.append(Enemy(	position_xy=(x, y), file_name=chosen_entity["sprite"],
 								enemy_id=n, speed=chosen_entity["speed"],
 								sight_radius=chosen_entity["sight_radius"],
 								target=player, combat=combat))
@@ -158,10 +173,6 @@ def main():
 	# Initialize entities
 	player = spawn_player()
 	enemies = spawn_enemies(player)
-
-	# Rendering groups ?
-	# all_sprites = pygame.sprite.RenderPlain(mob1)
-	# ui_sprites = pygame.sprite.RenderPlain()
 
 	# Game loop
 	while 1:

@@ -30,6 +30,8 @@ class Entity(pygame.sprite.Sprite):
 		# Sprite
 		self.image = load_image(file_name)
 		self.rect = self.image.get_rect()
+		# Update sprite rect position
+		self.rect.center = position_xy
 		# Movement
 		self.speed = speed
 		self.position = pygame.Vector2(position_xy)
@@ -183,12 +185,11 @@ class Enemy(Entity):
 		# Components
 		self.combat = combat
 		self.follower = FollowerAI(parent=self, sight_radius=sight_radius, target=target)
-		# State: stop movements while colliding with the player (and attacking)
-		self.pause_movement = False
+		# Attack cooldown control
 		self.attacking = False
-		# Custom timers
+		# Attack cooldown timer
 		self.ev_attack_cooldown = pygame.USEREVENT + enemy_id
-		# TODO TMP
+		# Dead body sprite
 		self.corpse = load_image("corpse_generic.png")
 
 	def render(self, surface, dead_surface, show_collision_rects):
@@ -216,20 +217,15 @@ class Enemy(Entity):
 				self.attacking = False
 
 		# Check collision with player entity to attack (and pause follower ai)
-		if not self.attacking:
-			if self.check_collisions_rect(player.rect):
-				self.attacking = True
-				self.pause_movement = True
-				# Restart attack cooldown
-				pygame.time.set_timer(self.ev_attack_cooldown, 1000, loops=1)
-				# Apply attack and stop following the player
-				self.combat.attack_target(player)
-			else:
-				self.pause_movement = False
+		if not self.attacking and self.check_collisions_rect(player.rect):
+			self.attacking = True
+			# Restart attack cooldown
+			pygame.time.set_timer(self.ev_attack_cooldown, 1000, loops=1)
+			# Apply attack and stop following the player
+			self.combat.attack_target(player)
 
 		# Move entity towards player while not colliding
-		if not self.pause_movement:
-			self.follower.update(dt, collisions)
+		self.follower.update(dt, collisions)
 
 
 # -------------------------------------------------------------------------------------------------

@@ -87,7 +87,7 @@ class Tilemap(object):
 			for j in range(m):
 				# tile = self.tileset.tiles[self.map[i, j]]
 				# Choose correct map tile
-				if self.map[i, j] == 7:
+				if self.map[i, j] == 0:
 					tile = self.tile_floor
 				else:
 					tile = self.tile_wall
