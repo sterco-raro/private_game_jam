@@ -32,13 +32,11 @@ except ImportError as importErr:
 # -------------------------------------------------------------------------------------------------
 
 
-def main_menu(surface, background, font):
+def render_basic_menu(surface, background, text_surface, text_margin_left, text_margin_top):
+	"""Render a basic splash screen (background and text), wait for user input"""
 	# Setup rendering
 	surface.blit(background, (0, 0))
-	surface.blit(
-		font.render(MAIN_MENU_TEXT, True, (255, 255, 255)),
-		((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4)
-	)
+	surface.blit(text_surface, (text_margin_left, text_margin_top))
 	# Update display
 	pygame.display.flip()
 	# Loop waiting for user input
@@ -49,33 +47,29 @@ def main_menu(surface, background, font):
 			if event.type == KEYDOWN:
 				if event.key == K_SPACE:
 					return
+
+
+def main_menu(surface, background, font):
+	"""Render the main menu"""
+	render_basic_menu(	surface, background,
+						font.render(MAIN_MENU_TEXT, True, (255, 255, 255)),
+						20, VIEWPORT_HEIGHT - 40)
 
 
 def game_over(surface, background, font):
-	# Setup rendering
-	surface.blit(background, (0, 0))
-	surface.blit(
-		font.render(GAME_OVER_TEXT, True, (255, 255, 255)),
-		((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4)
-	)
-	# Update display
-	pygame.display.flip()
-	# Loop waiting for user input
-	while 1:
-		for event in pygame.event.get():
-			if event.type == QUIT:
-				return
-			if event.type == KEYDOWN:
-				if event.key == K_SPACE:
-					return
+	"""Render the game over screen"""
+	render_basic_menu(	surface, background,
+						font.render(GAME_OVER_TEXT, True, (255, 255, 255)),
+						20, VIEWPORT_HEIGHT - 40)
 
 
 # -------------------------------------------------------------------------------------------------
 
 
 def spawn_player():
+	"""Spawn the player at a defined location"""
 	_combat = CombatSystem(max_hp=8, base_attack=2, base_defense=1)
-	return Player(position_xy=(8 * TILE_SIZE, 8 * TILE_SIZE), combat=_combat)
+	return Player(position_xy=PLAYER_SPAWN_POINT, combat=_combat)
 
 
 def spawn_enemies(player, how_many=4):
@@ -85,7 +79,6 @@ def spawn_enemies(player, how_many=4):
 	chosen_entity = 0
 	entities_number = len(ENEMIES)
 
-	# TODO random position inside arena
 	for n in range(how_many):
 		x = 0
 		y = 0
@@ -93,14 +86,15 @@ def spawn_enemies(player, how_many=4):
 		distance_y = 0
 		position_found = False
 
+		# Find a position for this enemy at least SPAWN_DISTANCE away from the player
 		while not position_found:
 			x = random.randint(TILE_SIZE, WORLD_WIDTH - TILE_SIZE)
-			y = random.randint(TILE_SIZE, WORLD_WIDTH - TILE_SIZE)
+			y = random.randint(TILE_SIZE, WORLD_HEIGHT - TILE_SIZE)
 
 			distance_x = abs(x - player.position[0])
 			distance_y = abs(y - player.position[1])
 
-			if distance_x >= 4 * TILE_SIZE and distance_y >= 4 * TILE_SIZE:
+			if distance_x >= SPAWN_DISTANCE and distance_y >= SPAWN_DISTANCE:
 				position_found = True
 
 		# Choose a random enemy in previously made list
@@ -124,29 +118,28 @@ def spawn_enemies(player, how_many=4):
 def main():
 	print("\n{}. Version: {}\n".format(GAME_NAME, GAME_VERSION))
 
-	# Main() "global" variables
+	# Pygame modules
 	clock 					= None	# pygame.time.Clock
 
+	# Surfaces
 	world 					= None	# pygame.Surface, holds world map
 	canvas	 				= None	# pygame.Surface, used to compose game screen before blitting to the viewport
 	viewport 				= None	# pygame.Surface, window screen: render things currently visible by the player
 
+	# Loop variables
 	debug_collisions 		= False	# shows collision rectangles
 	first_iteration			= True 	# TODO HACK: heal player on first loop iteration (BUG: player starts with 6/8 HP)
 	dt 						= 0 	# amount of time passed since last loop iteration
 	events 					= None	# pygame.events queue
 	redraw_world 			= False	# the world map will render on next loop iteration
-
 	kill_count 				= 0 	# Player kills counter
 
+	# HUD related variables
 	hud_topleft 			= None	# pygame.Surface, holds the top-left section of the HUD
 	hud_topright 			= None	# pygame.Surface, holds the top-right section of the HUD
-	# hud_bottomleft 			= None	# pygame.Surface, holds the bottom-left section of the HUD
-	# hud_bottomright 		= None	# pygame.Surface, holds the bottom-right section of the HUD
-	hud_topleft_text 		= None
-	hud_topright_text 		= None
-	# hud_topleft_offset 	= 0
-	hud_topright_offset_x 	= 0
+	hud_topleft_text 		= None	# Formatted string container
+	hud_topright_text 		= None	# Formatted string container
+	hud_topright_margin 	= 0 	# Right margin for the top-right HUD
 
 	# Initialize pygame and window
 	pygame.init()
@@ -154,7 +147,7 @@ def main():
 	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
 	pygame.display.set_caption(WINDOW_TITLE)
 
-	# Initialize clock (mainly FPS limit)
+	# Initialize clock (FPS limit and general-purpose timers)
 	clock = pygame.time.Clock()
 
 	# Create pygame font objects
@@ -197,11 +190,14 @@ def main():
 				return
 
 			if event.type == KEYDOWN:
+				# Show collision layer
 				if event.key == K_k:
 					debug_collisions = not debug_collisions
 					redraw_world = True
+				# Spawn another wave of enemies
 				if event.key == K_r:
 					enemies = spawn_enemies(player, how_many=random.randint(4, 8))
+				# Activate god mode
 				if event.key == K_g:
 					player.combat.base_defense = 100
 
@@ -220,11 +216,14 @@ def main():
 			redraw_world = False
 
 		# Render sprites
-		dead = False
+		is_dead = False
 		for i in range(len(enemies) - 1):
 			# HACK: render will return True when the enemy dies so we can erase its reference
-			dead = enemies[i].render(canvas, world, debug_collisions)
-			if dead:
+			# BUG: while killing an enemy another one can die too (even far away)
+			# BUG: player can die when no enemies are around (may be a collision with a corpse?)
+			# BUG: while diyng, an enemy can appear far away just for a frame
+			is_dead = enemies[i].render(canvas, world, debug_collisions)
+			if is_dead:
 				kill_count += 1
 				enemies.pop(i)
 		player.render(canvas, debug_collisions)
@@ -239,11 +238,10 @@ def main():
 		hud_topleft = font_hud.render(hud_topleft_text, True, (0, 0, 0))
 		hud_topright = font_hud.render(hud_topright_text, True, (0, 0, 0))
 
-		# hud_topleft_offset = font_hud.size(hud_topleft_text)
-		hud_topright_offset_x = font_hud.size(hud_topright_text)[0] + HUD_MARGIN
+		hud_topright_margin = font_hud.size(hud_topright_text)[0] + HUD_MARGIN
 
 		viewport.blit(hud_topleft, (HUD_MARGIN, HUD_MARGIN))
-		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_offset_x, HUD_MARGIN))
+		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_margin, HUD_MARGIN))
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
