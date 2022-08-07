@@ -36,7 +36,7 @@ def main_menu(surface, background, font):
 	# Setup rendering
 	surface.blit(background, (0, 0))
 	surface.blit(
-		font.render("CIAO QUESTO È UN GIOCO BELLISSIMO (PREMI SPAZIO)", True, (255, 255, 255)),
+		font.render(MAIN_MENU_TEXT, True, (255, 255, 255)),
 		((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4)
 	)
 	# Update display
@@ -55,7 +55,7 @@ def game_over(surface, background, font):
 	# Setup rendering
 	surface.blit(background, (0, 0))
 	surface.blit(
-		font.render("CE L'HAI FATTA! (PREMI SPAZIO WOW)", True, (255, 255, 255)),
+		font.render(GAME_OVER_TEXT, True, (255, 255, 255)),
 		((VIEWPORT_WIDTH/2 - 240), VIEWPORT_HEIGHT*3/4)
 	)
 	# Update display
