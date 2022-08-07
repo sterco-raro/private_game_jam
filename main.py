@@ -11,19 +11,15 @@
 try:
 	import sys
 	import random
-	import math
-	import os
 	import pygame
-	import time
 	from pygame.locals import *
 
 	from constants import *
-	from entities import *
-	from game_map import *
-	from utils import load_image, rect_eq
+	from entities import Player, Enemy
+	from game_map import Tilemap
+	from utils import load_image
 	from camera import SimpleCamera
 	from components.combat import CombatSystem
-
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
