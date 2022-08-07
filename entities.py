@@ -111,10 +111,6 @@ class Player(Entity):
 		self.weapon_slot_left 	= Weapon((0, 0), self, orbit_distance=30)
 		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-30)
 
-		# TODO TMP DEBUG show attack rect
-		self.attack_rect_1 = None
-		self.attack_rect_2 = None
-
 	def render(self, surface, show_collision_rects):
 		if not surface: return
 		# Draw player weapons
@@ -148,8 +144,8 @@ class Player(Entity):
 		if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: 	direction += ( 1,  0)
 		# if pressed click sinistro: attacca col sinistro, ecc
 		mouse_left, mouse_middle, mouse_right = pygame.mouse.get_pressed()
-		if mouse_left: self.use_left_hand(entities)
-		if mouse_right: self.use_right_hand(entities)
+		if mouse_left: self.attack_with_slot(True, entities)
+		if mouse_right: self.attack_with_slot(False, entities)
 		# Move sprite in calculated direction
 		self.move_to(dt, direction, collisions)
 		# Update crosshair
@@ -158,17 +154,16 @@ class Player(Entity):
 		self.weapon_slot_left.update(self.cursor)
 		self.weapon_slot_right.update(self.cursor)
 
-	def use_left_hand(self, entities):
-		self.attack_rect_1 = self.weapon_slot_left.rect.inflate(5, 5)
-		self.attack_rect_2 = self.weapon_slot_right.rect.inflate(5, 5)
+	def attack_with_slot(self, left_slot, entities):
 		# Check collisions between attack rect and entities
 		for entity in entities:
-			if self.attack_rect_1.colliderect(entity.rect) or self.attack_rect_2.colliderect(entity.rect):
-				# Deal damage to colliding entities
-				self.combat.attack_target(entity)
-
-	def use_right_hand(self, entities):
-		print("DX")
+			# Deal damage to colliding entities with the correct slot (using a slightly bigger rect)
+			if left_slot:
+				if (self.weapon_slot_left.rect.inflate(5, 5).colliderect(entity.rect)):
+					self.combat.attack_target(entity)
+			else:
+				if (self.weapon_slot_right.rect.inflate(5, 5).colliderect(entity.rect)):
+					self.combat.attack_target(entity)
 
 
 # -------------------------------------------------------------------------------------------------
