@@ -204,6 +204,8 @@ def main():
 				# TODO add a spawner for enemy waves
 				if event.key == K_r:
 					enemies = spawn_enemies(player, how_many=random.randint(4, 8))
+				if event.key == K_g:
+					player.combat.base_defense = 100
 
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))

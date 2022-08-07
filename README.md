@@ -15,6 +15,7 @@ Life's hard, you're angry. Enjoy
 
 ## Dev controls
 
+- g: god mode
 - r: reset world state
 - k: show collisions layer
 
