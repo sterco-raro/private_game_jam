@@ -3,7 +3,9 @@
 import pygame
 
 # General
+GAME_NAME = "PrivateGameJam Pazzissima"
 GAME_VERSION = "0.1"
+WINDOW_TITLE = GAME_NAME
 
 # Window
 VIEWPORT_WIDTH = 640
@@ -11,9 +13,14 @@ VIEWPORT_HEIGHT = 480
 
 SCREEN_SIZE = pygame.Rect((0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
 
+# Camera
+CAMERA_SMOOTHNESS = 0.05
+
 # HUD
 FONT_SIZE_HUD = 48
 FONT_SIZE_MENU = 24
+
+HUD_MARGIN = 10
 
 # Map
 TILE_SIZE = 48
@@ -26,8 +33,8 @@ WORLD_HEIGHT = MAP_HEIGHT * TILE_SIZE
 
 TILES_INFO = { "walkable": [0] }
 
-# Camera
-CAMERA_SMOOTHNESS = 0.05
+# LEVELS
+LEVEL_ARENA = "data/level.txt"
 
 # Movement
 DAMPING_FACTOR = 100	# Movement speed damping factor
@@ -40,6 +47,6 @@ ENEMIES = [
 ]
 
 # Colors
-DBG_COLLISION_PLAYER 		= (220, 40, 160)
-DBG_COLLISION_ENEMY 		= (180, 240, 60)
-DBG_COLLISION_TILES 		= (40, 80, 200)
+DBG_COLLISION_PLAYER 	= (220, 40, 160)
+DBG_COLLISION_ENEMY 	= (180, 240, 60)
+DBG_COLLISION_TILES 	= (40, 80, 200)

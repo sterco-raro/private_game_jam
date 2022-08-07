@@ -122,7 +122,7 @@ def spawn_enemies(player, how_many=4):
 
 
 def main():
-	print("\n\nPRIVATE GAME JAM. Version: {}\n".format(GAME_VERSION))
+	print("\n{}. Version: {}\n".format(GAME_NAME, GAME_VERSION))
 
 	# Main() "global" variables
 	clock 					= None	# pygame.time.Clock
@@ -152,7 +152,7 @@ def main():
 	pygame.init()
 	pygame.mouse.set_visible(False)	# Hide system cursor
 	viewport = pygame.display.set_mode(SCREEN_SIZE.size)#, pygame.FULLSCREEN)
-	pygame.display.set_caption("Giancarlo Pazzo Sgravato")
+	pygame.display.set_caption(WINDOW_TITLE)
 
 	# Initialize clock (mainly FPS limit)
 	clock = pygame.time.Clock()
@@ -176,7 +176,7 @@ def main():
 	camera = SimpleCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
 
 	# Create world map and render to related surface
-	tilemap = Tilemap(Tileset("tileset.png"), size=(MAP_WIDTH, MAP_HEIGHT), file_name="data/level.txt")
+	tilemap = Tilemap(size=(MAP_WIDTH, MAP_HEIGHT), file_name=LEVEL_ARENA)
 	tilemap.render(world, debug_collisions)
 
 	# Initialize entities
@@ -200,8 +200,6 @@ def main():
 				if event.key == K_k:
 					debug_collisions = not debug_collisions
 					redraw_world = True
-				# TODO R to reset game/world state, not to spawn enemies
-				# TODO add a spawner for enemy waves
 				if event.key == K_r:
 					enemies = spawn_enemies(player, how_many=random.randint(4, 8))
 				if event.key == K_g:
@@ -242,16 +240,16 @@ def main():
 		hud_topright = font_hud.render(hud_topright_text, True, (0, 0, 0))
 
 		# hud_topleft_offset = font_hud.size(hud_topleft_text)
-		hud_topright_offset_x = font_hud.size(hud_topright_text)[0] + 10
+		hud_topright_offset_x = font_hud.size(hud_topright_text)[0] + HUD_MARGIN
 
-		viewport.blit(hud_topleft, (10, 10))
-		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_offset_x, 10))
+		viewport.blit(hud_topleft, (HUD_MARGIN, HUD_MARGIN))
+		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_offset_x, HUD_MARGIN))
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
 		dt = clock.tick(60)
 
-		# TODO HACK: 
+		# TODO HACK: heal player on first loop iteration (BUG: player starts with 6/8 HP)
 		if first_iteration:
 			player.combat.heal(8)
 			first_iteration = False
