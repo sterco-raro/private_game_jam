@@ -4,6 +4,8 @@ try:
     import sys
     import os
     import pygame
+
+    from constants import RESOURCES_FOLDER
 except ImportError as importErr:
     print("Couldn't load module. {}".format(importErr))
     sys.exit(2)
@@ -13,8 +15,8 @@ except ImportError as importErr:
 
 
 def load_image(name):
-    """ Load image and return image object"""
-    fullname = os.path.join('data', name)
+    """Load image and return image object"""
+    fullname = os.path.join(RESOURCES_FOLDER, name)
     try:
         image = pygame.image.load(fullname)
         if image.get_alpha is None:

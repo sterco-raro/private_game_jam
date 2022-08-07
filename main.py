@@ -18,7 +18,6 @@ try:
 	from entities import Player, Enemy
 	from game_map import Tilemap
 	from utils import load_image
-	from camera import SimpleCamera
 	from components.combat import CombatSystem
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -161,9 +160,6 @@ def main():
 	world = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
 	canvas = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
 
-	# Camera viewport, centered on given target (in camera update function)
-	camera = SimpleCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
-
 	# Create world map and render to related surface
 	tilemap = Tilemap(size=(MAP_WIDTH, MAP_HEIGHT), file_name=LEVEL_ARENA)
 	tilemap.render(world, debug_collisions)
@@ -203,8 +199,7 @@ def main():
 		# Logic updates
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
-		player.update(dt, tilemap.collision_map, camera.rect.topleft, enemies)
-		camera.update(player.rect)
+		player.update(dt, tilemap.collision_map, enemies)
 
 		# Only draw world map when needed
 		if redraw_world:
@@ -225,7 +220,7 @@ def main():
 		player.render(canvas, debug_collisions)
 
 		# Done drawing stuff, blit everything to screen
-		viewport.blit(canvas, (0, 0), camera.rect)
+		viewport.blit(canvas, (0, 0), player.camera.rect)
 
 		# Draw HUD
 		hud_topleft_text = "HP {}/{}".format(player.combat.hp, player.combat.max_hp)

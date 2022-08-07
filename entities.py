@@ -4,12 +4,15 @@
 try:
 	import sys
 	import pygame
+
 	from utils import load_image
+	from camera import SimpleCamera
 	from constants import (
 		DAMPING_FACTOR,
 		TILES_INFO,
 		WORLD_WIDTH, WORLD_HEIGHT,
-		DBG_COLLISION_PLAYER, DBG_COLLISION_ENEMY
+		VIEWPORT_WIDTH, VIEWPORT_HEIGHT,
+		DBG_COLLISION_PLAYER, DBG_COLLISION_ENEMY,
 	)
 	from components.combat import CombatSystem
 	from components.follower_ai import FollowerAI
@@ -107,9 +110,12 @@ class Player(Entity):
 		# Fighting system
 		self.combat = combat
 		# Equipment
-		self.cursor = Cursor((0, 0))
 		self.weapon_slot_left 	= Weapon((0, 0), self, orbit_distance=30)
 		self.weapon_slot_right 	= Weapon((0, 0), self, orbit_distance=-30)
+		# Mouse cursor
+		self.cursor = Cursor((0, 0))
+		# Viewport camera
+		self.camera = SimpleCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
 
 	def render(self, surface, show_collision_rects):
 		if not surface: return
@@ -128,7 +134,7 @@ class Player(Entity):
 		# Draw crosshair
 		surface.blit(self.cursor.image, self.cursor.rect)
 
-	def update(self, dt, collisions, camera_position, entities):
+	def update(self, dt, collisions, entities):
 		# Mouse buttons state
 		mouse_left 		= None
 		mouse_middle 	= None
@@ -149,10 +155,12 @@ class Player(Entity):
 		# Move sprite in calculated direction
 		self.move_to(dt, direction, collisions)
 		# Update crosshair
-		self.cursor.update(camera_position)
+		self.cursor.update(self.camera.rect.topleft)
 		# Update player equipment
 		self.weapon_slot_left.update(self.cursor)
 		self.weapon_slot_right.update(self.cursor)
+		# Update viewport
+		self.camera.update(self.rect)
 
 	def attack_with_slot(self, left_slot, entities):
 		# Check collisions between attack rect and entities

@@ -1,5 +1,6 @@
 # Viewport
 
+
 try:
 	import sys
 	import pygame
@@ -21,13 +22,12 @@ class SimpleCamera(object):
 
 	def update(self, target_rect):
 		# Center camera to target position
-		x = target_rect.centerx - int(self.width/2)
-		y = target_rect.centery - int(self.height/2)
-
+		x = target_rect.centerx - self.width//2
+		y = target_rect.centery - self.height//2
 		# Clamp scrolling to map size
 		x = max(0, x) 							# left
 		y = max(0, y) 							# top
 		x = min(WORLD_WIDTH - self.width, x) 	# right
 		y = min(WORLD_HEIGHT - self.height, y) 	# bottom
-
+		# Update camera position
 		self.rect = pygame.Rect(x, y, self.width, self.height)

@@ -1,11 +1,15 @@
 # Gamae constants
 
+
 import pygame
+
 
 # General
 GAME_NAME = "PrivateGameJam Pazzissima"
 GAME_VERSION = "0.1"
 WINDOW_TITLE = GAME_NAME
+
+RESOURCES_FOLDER = "data"
 
 # Window
 VIEWPORT_WIDTH = 640
