@@ -10,9 +10,13 @@ Life's hard, you're angry. Enjoy
 
 - movement: WASD
 - cursor: mouse
-- attack: mouse left button
-- reset world state: keyboard r (resets enemies for now)
-- debug: show collisions rectangles: keyboard k
+- attack with left hand: mouse left button
+- attack with right hand: mouse right button
+
+## Dev controls
+
+- r: reset world state
+- k: show collisions layer
 
 ## Dev Run
 
