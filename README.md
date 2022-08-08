@@ -29,7 +29,7 @@ Life's hard, you're angry. Enjoy
 
 #### Windows
 
-same commands, just change .venv structure to .venv/Scripts/activate (check if wrong?)
+same commands but virtualenv folder structure is different (.venv/Scripts/something?)
 
 ## Build
 
