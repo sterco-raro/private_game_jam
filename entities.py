@@ -3,6 +3,7 @@
 
 try:
 	import sys
+	import random
 	import pygame
 
 	from utils import load_image
@@ -332,5 +333,57 @@ class Heart(Entity):
 		if not self._consumed:
 			self._consumed = True
 			target.combat.heal(self.heal_amount)
+			return True
+		return False
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+class RandomPill(Entity):
+	"""TODO docstring for RandomPill"""
+	def __init__(self, position_xy, file_name="pill.png", bonus_value=1):
+		super().__init__(position_xy, file_name)
+		self.bonus_value  = bonus_value
+		# One-time usage control
+		self._consumed = False
+		# Combat stats that can be powered up
+		self.stats = ["attack", "defense", "max_hp", "speed"]
+
+	def has_been_consumed(self):
+		"""Check whether this item has been already consumed"""
+		return self._consumed
+
+	def render(self, surface):
+		"""Draw the heart entity on the given surface"""
+		if self.has_been_consumed(): return
+		surface.blit(self.image, self.rect)
+
+	def update(self):
+		"""Entity update logic"""
+		if self.has_been_consumed(): return
+
+	def apply_bonus(self, target):
+		# Get a random stat
+		stat = self.stats[random.randint(0, len(self.stats) - 1)]
+		# Apply bonus
+		if stat == "attack":
+			target.combat.attack_bonus += self.bonus_value
+		if stat == "defense":
+			target.combat.defense_bonus += self.bonus_value
+		if stat == "max_hp":
+			target.combat.max_hp += self.bonus_value
+		if stat == "speed":
+			target.speed += self.bonus_value
+
+	def consume(self, target):
+		"""Activate item effect first time only"""
+		# Only usable on combat-enabled entities
+		if not target.combat:
+			return
+		# One time only
+		if not self._consumed:
+			self._consumed = True
+			self.apply_bonus(target)
 			return True
 		return False

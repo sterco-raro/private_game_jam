@@ -15,7 +15,7 @@ try:
 	from pygame.locals import *
 
 	from constants import *
-	from entities import Player, Enemy, Heart
+	from entities import Player, Enemy, Heart, RandomPill
 	from game_map import Tilemap
 	from utils import load_image
 	from components.combat import CombatSystem
@@ -225,9 +225,12 @@ def main():
 			if is_dead:
 				# Update counter
 				kill_count += 1
-				# Randomly drop a heart
+				# Randomly drop a heart (50%)
 				if random.randint(0, 1):
-					items.append(Heart(enemies[i].position))
+					items.append(Heart((enemies[i].position[0] - 48, enemies[i].position[1] - 48)))
+				# Randomly drop a power-up pill (50%)
+				if random.randint(0, 1):
+					items.append(RandomPill((enemies[i].position[0] + 48, enemies[i].position[1] + 48)))
 				# Remove entity reference
 				enemies.pop(i)
 		player.render(canvas, debug_collisions)
