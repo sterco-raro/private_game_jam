@@ -1,4 +1,4 @@
-# Combat system
+# Combat system component
 
 
 class CombatSystem(object):
