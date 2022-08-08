@@ -317,9 +317,12 @@ class Heart(Entity):
 		if self.has_been_consumed(): return
 		surface.blit(self.image, self.rect)
 
-	def update(self):
+	def update(self, collisions, entities):
 		"""Entity update logic"""
 		if self.has_been_consumed(): return
+
+		# TODO Check collisions with walls: bounce off the wall
+		# TODO Check collisions with player and enemies: let them push you around
 
 	def consume(self, target):
 		"""Activate item effect first time only"""
@@ -359,7 +362,7 @@ class RandomPill(Entity):
 		if self.has_been_consumed(): return
 		surface.blit(self.image, self.rect)
 
-	def update(self):
+	def update(self, collisions, entities):
 		"""Entity update logic"""
 		if self.has_been_consumed(): return
 

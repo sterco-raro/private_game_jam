@@ -199,7 +199,7 @@ def main():
 
 		# Logic updates
 		for item in items:
-			item.update()
+			item.update(tilemap.collision_map, [player] + enemies)
 
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
@@ -216,23 +216,25 @@ def main():
 			item.render(canvas)
 
 		is_dead = False
-		for i in range(len(enemies) - 1):
+		to_remove = []
+		for enemy in enemies:
 			# HACK: render will return True when the enemy dies so we can erase its reference
-			# BUG: while killing an enemy another one can die too (even far away)
-			# BUG: player can die when no enemies are around (may be a collision with a corpse?)
-			# BUG: while diyng, an enemy can appear far away just for a frame
-			is_dead = enemies[i].render(canvas, world, debug_collisions)
+			is_dead = enemy.render(canvas, world, debug_collisions)
 			if is_dead:
 				# Update counter
 				kill_count += 1
 				# Randomly drop a heart (50%)
 				if random.randint(0, 1):
-					items.append(Heart((enemies[i].position[0] - 48, enemies[i].position[1] - 48)))
+					items.append(Heart((enemy.position[0] - 48, enemy.position[1] - 48)))
 				# Randomly drop a power-up pill (50%)
 				if random.randint(0, 1):
-					items.append(RandomPill((enemies[i].position[0] + 48, enemies[i].position[1] + 48)))
-				# Remove entity reference
-				enemies.pop(i)
+					items.append(RandomPill((enemy.position[0] + 48, enemy.position[1] + 48)))
+				# Store dead entity reference to remove it outside the loop (avoid weird bugs)
+				to_remove.append(enemy)
+		# Delete dead enemies from entities list
+		for element in to_remove:
+			enemies.remove(element)
+
 		player.render(canvas, debug_collisions)
 
 		# Done drawing stuff, blit everything to screen
