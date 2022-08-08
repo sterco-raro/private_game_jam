@@ -15,7 +15,7 @@ try:
 	from pygame.locals import *
 
 	from constants import *
-	from entities import Player, Enemy
+	from entities import Player, Enemy, Heart
 	from game_map import Tilemap
 	from utils import load_image
 	from components.combat import CombatSystem
@@ -167,6 +167,7 @@ def main():
 	# Initialize entities
 	player = spawn_player()
 	enemies = spawn_enemies(player)
+	items = []
 
 	# Game loop
 	while 1:
@@ -197,9 +198,13 @@ def main():
 		canvas.blit(world, (0, 0))
 
 		# Logic updates
+		for item in items:
+			item.update()
+
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
-		player.update(dt, tilemap.collision_map, enemies)
+
+		player.update(dt, tilemap.collision_map, enemies, items)
 
 		# Only draw world map when needed
 		if redraw_world:
@@ -207,6 +212,9 @@ def main():
 			redraw_world = False
 
 		# Render sprites
+		for item in items:
+			item.render(canvas)
+
 		is_dead = False
 		for i in range(len(enemies) - 1):
 			# HACK: render will return True when the enemy dies so we can erase its reference
@@ -215,7 +223,12 @@ def main():
 			# BUG: while diyng, an enemy can appear far away just for a frame
 			is_dead = enemies[i].render(canvas, world, debug_collisions)
 			if is_dead:
+				# Update counter
 				kill_count += 1
+				# Randomly drop a heart
+				if random.randint(0, 1):
+					items.append(Heart(enemies[i].position))
+				# Remove entity reference
 				enemies.pop(i)
 		player.render(canvas, debug_collisions)
 

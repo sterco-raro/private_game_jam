@@ -122,7 +122,7 @@ class Player(Entity):
 		# Draw crosshair
 		surface.blit(self.cursor.image, self.cursor.rect)
 
-	def update(self, dt, collisions, entities):
+	def update(self, dt, collisions, entities, items):
 		"""Update entity logic"""
 		# Mouse buttons state
 		mouse_left 		= None
@@ -130,6 +130,15 @@ class Player(Entity):
 		mouse_right 	= None
 		# Key state
 		pressed = pygame.key.get_pressed()
+		# Check collisions with items
+		consumed_items = []
+		for item in items:
+			if not item.has_been_consumed() and item.rect.colliderect(self.rect):
+				item.consume(self)
+				consumed_items.append(item)
+		# Remove consumed items from original list
+		for item in consumed_items:
+			items.remove(item)
 		# Movement direction
 		direction = pygame.Vector2((0, 0))
 		# Get direction based on keys pressed
@@ -137,10 +146,6 @@ class Player(Entity):
 		if pressed[pygame.K_a] or pressed[pygame.K_LEFT]: 	direction += (-1,  0)
 		if pressed[pygame.K_s] or pressed[pygame.K_DOWN]: 	direction += ( 0,  1)
 		if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: 	direction += ( 1,  0)
-		# React to mouse clicks (attacks)
-		mouse_left, mouse_middle, mouse_right = pygame.mouse.get_pressed()
-		if mouse_left: self.attack_with_slot(True, entities)
-		if mouse_right: self.attack_with_slot(False, entities)
 		# Move sprite in calculated direction
 		self.move_to(dt, direction, collisions)
 		# Update crosshair
@@ -150,6 +155,10 @@ class Player(Entity):
 		self.weapon_slot_right.update(self.cursor)
 		# Update viewport
 		self.camera.update(self.rect)
+		# React to mouse clicks (attacks)
+		mouse_left, mouse_middle, mouse_right = pygame.mouse.get_pressed()
+		if mouse_left: self.attack_with_slot(True, entities)
+		if mouse_right: self.attack_with_slot(False, entities)
 
 	def attack_with_slot(self, left_slot, entities):
 		"""Try to attack a colliding entity using either the left or right slot"""
@@ -284,3 +293,44 @@ class Cursor(Entity):
 		cursor_position = pygame.mouse.get_pos()
 		self.rect.center = pygame.Vector2(	cursor_position[0] + camera_position[0],
 											cursor_position[1] + camera_position[1])
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+class Heart(Entity):
+	"""TODO docstring for Heart"""
+	def __init__(self, position_xy, file_name="heart.png", heal_amount=1):
+		super().__init__(position_xy, file_name)
+		# Number of HP restored  by consuming this item
+		self.heal_amount = heal_amount
+		# One-time usage control
+		self._consumed = False
+
+	def has_been_consumed(self):
+		"""Check whether this item has been already consumed"""
+		return self._consumed
+
+	def render(self, surface):
+		"""Draw the heart entity on the given surface"""
+		if self.has_been_consumed(): return
+		surface.blit(self.image, self.rect)
+
+	def update(self):
+		"""Entity update logic"""
+		if self.has_been_consumed(): return
+
+	def consume(self, target):
+		"""Activate item effect first time only"""
+		# Only usable on combat-enabled entities
+		if not target.combat:
+			return
+		# Don't consume when target has full hp
+		if target.combat.hp == target.combat.max_hp:
+			return
+		# One time only
+		if not self._consumed:
+			self._consumed = True
+			target.combat.heal(self.heal_amount)
+			return True
+		return False

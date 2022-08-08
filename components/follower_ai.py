@@ -1,4 +1,4 @@
-# Enemy ai: follower
+# Enemy ai component: follower
 
 
 import random
