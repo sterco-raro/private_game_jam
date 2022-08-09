@@ -192,14 +192,17 @@ def main():
 					enemies = spawn_enemies(player, how_many=random.randint(4, 8))
 				# Activate god mode
 				if event.key == K_g:
-					player.combat.base_defense = 100
+					player.combat.max_hp 		= 100
+					player.combat.base_attack 	= 100
+					player.combat.base_defense 	= 100
+					player.combat.heal(100)
 
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
 
 		# Logic updates
 		for item in items:
-			item.update(tilemap.collision_map, [player] + enemies)
+			item.update(dt, tilemap.collision_map, [player] + enemies)
 
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
@@ -226,9 +229,9 @@ def main():
 				# Randomly drop a heart (50%)
 				if random.randint(0, 1):
 					items.append(Heart((enemy.position[0] - 48, enemy.position[1] - 48)))
-				# Randomly drop a power-up pill (50%)
-				if random.randint(0, 1):
-					items.append(RandomPill((enemy.position[0] + 48, enemy.position[1] + 48)))
+				# # Randomly drop a power-up pill (50%)
+				# if random.randint(0, 1):
+				# 	items.append(RandomPill((enemy.position[0] + 48, enemy.position[1] + 48)))
 				# Store dead entity reference to remove it outside the loop (avoid weird bugs)
 				to_remove.append(enemy)
 		# Delete dead enemies from entities list

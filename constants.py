@@ -60,3 +60,6 @@ ENEMIES = [
 DBG_COLLISION_PLAYER 	= (220, 40, 160)
 DBG_COLLISION_ENEMY 	= (180, 240, 60)
 DBG_COLLISION_TILES 	= (40, 80, 200)
+
+# Miscellanea
+RECT_SIDES = ["top", "bottom", "left", "right"]

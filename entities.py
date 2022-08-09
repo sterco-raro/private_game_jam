@@ -9,6 +9,7 @@ try:
 	from utils import load_image
 	from camera import SimpleCamera
 	from constants import (
+		RECT_SIDES,
 		DAMPING_FACTOR,
 		TILES_INFO,
 		WORLD_WIDTH, WORLD_HEIGHT,
@@ -56,10 +57,10 @@ class Entity(pygame.sprite.Sprite):
 			self.image = pygame.transform.flip(self.image, True, False)
 			self.flipped = False
 
-	def clamp_to_map(self, position_xy):
-		"""Clamp position_xy vector to world map area, returns the clamped vector"""
-		x = min(WORLD_WIDTH - self.rect.width/2, max(0, position_xy[0]))
-		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, position_xy[1]))
+	def clamp_to_map(self, position):
+		"""Clamp position vector to world map area, returns the clamped vector"""
+		x = min(WORLD_WIDTH - self.rect.width/2, max(0, position.x))
+		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, position.y))
 		return pygame.Vector2(x, y)
 
 	def move_to(self, dt, direction, collisions):
@@ -68,7 +69,7 @@ class Entity(pygame.sprite.Sprite):
 		if direction.length() > 0:
 			direction.normalize_ip()
 		# Calculate new position
-		new_position = self.position + direction * dt * self.speed/DAMPING_FACTOR
+		new_position = self.clamp_to_map(self.position + direction * dt * self.speed/DAMPING_FACTOR)
 		# Check for possible collisions
 		for rect in collisions:
 			if rect.collidepoint(new_position):
@@ -134,7 +135,12 @@ class Player(Entity):
 		# Check collisions with items
 		consumed_items = []
 		for item in items:
-			if not item.has_been_consumed() and item.rect.colliderect(self.rect):
+			if (
+				not item.has_been_consumed() and
+				# TODO Not working as expected
+				item.rect.inflate(5, 5).colliderect(self.rect) and
+				not self.combat.has_full_hp()
+			):
 				item.consume(self)
 				consumed_items.append(item)
 		# Remove consumed items from original list
@@ -317,12 +323,13 @@ class Heart(Entity):
 		if self.has_been_consumed(): return
 		surface.blit(self.image, self.rect)
 
-	def update(self, collisions, entities):
+	def update(self, dt, collisions, entities):
 		"""Entity update logic"""
 		if self.has_been_consumed(): return
-
-		# TODO Check collisions with walls: bounce off the wall
-		# TODO Check collisions with player and enemies: let them push you around
+		# Entities can push this item around
+		self.collide(dt, [e.rect for e in entities])
+		# Bounce off walls
+		self.collide(dt, collisions)
 
 	def consume(self, target):
 		"""Activate item effect first time only"""
@@ -338,6 +345,53 @@ class Heart(Entity):
 			target.combat.heal(self.heal_amount)
 			return True
 		return False
+
+	def collide(self, dt, rects):
+		"""TODO docstring for Heart.collide"""
+		# TODO add a bouncing effect
+		hits = []
+		index = 0
+
+		# Find first colliding entity
+		index = self.rect.collidelist(rects)
+		if index > -1:
+			# Get the collision rectangle
+			clip = self.rect.clip(rects[index])
+
+			# Get colliding sides
+			for edge in RECT_SIDES:
+				if getattr(clip, edge) == getattr(self.rect, edge):
+					hits.append(edge)
+
+			# Create a new direction vector based on colliding sides
+			direction = None
+			hits_len = len(hits)
+
+			# Two sides: move diagonally
+			if hits_len == 2:
+				if "top" in hits and "left" in hits:
+					direction = pygame.Vector2(1, 1)
+				elif "top" in hits and "right" in hits:
+					direction = pygame.Vector2(-1, 1)
+				elif "bottom" in hits and "left" in hits:
+					direction = pygame.Vector2(1, -1)
+				elif "bottom" in hits and "right" in hits:
+					direction = pygame.Vector2(-1, -1)
+			# Three sides: exclude opposite sides and move in the remaining direction
+			if hits_len >= 3:
+				if "top" in hits and "bottom" in hits:
+					if "left" in hits:
+						direction = pygame.Vector2(1, 0)
+					elif "right" in hits:
+						direction = pygame.Vector2(-1, 0)
+				elif "left" in hits and "right" in hits:
+					if "top" in hits:
+						direction = pygame.Vector2(0, 1)
+					elif "bottom" in hits:
+						direction = pygame.Vector2(0, -1)
+			# Perform movement
+			if direction:
+				self.move_to(dt, direction, [])
 
 
 # -------------------------------------------------------------------------------------------------

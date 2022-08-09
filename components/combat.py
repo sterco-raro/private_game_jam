@@ -46,6 +46,9 @@ class CombatSystem(object):
 	def is_alive(self):
 		return self.alive
 
+	def has_full_hp(self):
+		return self.hp == self.max_hp
+
 	def heal(self, amount):
 		"""Heals the user. Clamp the value to max_hp and return the recovered amount"""
 		# Exit early on full health
