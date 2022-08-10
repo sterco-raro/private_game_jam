@@ -99,6 +99,8 @@ class Player(Entity):
 		combat=CombatSystem()							# Player attributes
 	):
 		super().__init__(position_xy, file_name, speed)
+		# Base speed value, without bonuses
+		self.base_speed = speed
 		# Fighting system
 		self.combat = combat
 		# Equipment

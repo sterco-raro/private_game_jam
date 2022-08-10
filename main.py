@@ -15,10 +15,11 @@ try:
 	from pygame.locals import *
 
 	from constants import *
+	from utils import load_image
+	from hud import Hud
 	from entities import Player, Enemy
 	from items import Heart, Pill, Pillbox
 	from game_map import Tilemap
-	from utils import load_image
 	from components.combat import CombatSystem
 
 except ImportError as importErr:
@@ -112,6 +113,8 @@ def spawn_enemies(player, how_many=4):
 # -------------------------------------------------------------------------------------------------
 
 
+# TODO limit player.combat bonuses to +99 (speed?)
+
 def main():
 	print("\n{}. Version: {}\n".format(GAME_NAME, GAME_VERSION))
 
@@ -147,8 +150,10 @@ def main():
 	# Initialize clock (FPS limit and general-purpose timers)
 	clock = pygame.time.Clock()
 
-	# Create pygame font objects
-	font_hud = pygame.font.SysFont(None, FONT_SIZE_HUD)
+	# Initialize hud module
+	hud = Hud(hud_size=FONT_SIZE_HUD, color=(0, 0, 0))
+
+	# Create menu font object
 	font_menu = pygame.font.SysFont(None, FONT_SIZE_MENU)
 
 	# Main menu and game over background surface
@@ -195,8 +200,8 @@ def main():
 				# Activate god mode
 				if event.key == K_g:
 					player.combat.max_hp 		= 100
-					player.combat.base_attack 	= 100
-					player.combat.base_defense 	= 100
+					player.combat.attack_bonus 	= 100
+					player.combat.defense_bonus = 100
 					player.combat.heal(100)
 
 		# Clear working surface (canvas)
@@ -254,16 +259,7 @@ def main():
 		viewport.blit(canvas, (0, 0), player.camera.rect)
 
 		# Draw HUD
-		hud_topleft_text = "HP {}/{}".format(player.combat.hp, player.combat.max_hp)
-		hud_topright_text = "{} Kills".format(kill_count)
-
-		hud_topleft = font_hud.render(hud_topleft_text, True, (0, 0, 0))
-		hud_topright = font_hud.render(hud_topright_text, True, (0, 0, 0))
-
-		hud_topright_margin = font_hud.size(hud_topright_text)[0] + HUD_MARGIN
-
-		viewport.blit(hud_topleft, (HUD_MARGIN, HUD_MARGIN))
-		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_margin, HUD_MARGIN))
+		hud.render_hud(viewport, player, kill_count)
 
 		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
 		pygame.display.update()
