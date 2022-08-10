@@ -51,9 +51,9 @@ PLAYER_SPAWN_POINT = (WORLD_WIDTH // 2, WORLD_HEIGHT // 2)
 SPAWN_DISTANCE = 2 * TILE_SIZE
 
 ENEMIES = [
-	{ "sprite": "geezer_1.png", "max_hp": 4, "base_attack": 1, "base_defense": 0, "speed": 18, "sight_radius": 120 },
-	{ "sprite": "geezer_2.png", "max_hp": 6, "base_attack": 1, "base_defense": 1, "speed": 22, "sight_radius": 280 },
-	{ "sprite": "barney.png", "max_hp": 8, "base_attack": 2, "base_defense": 1, "speed": 26, "sight_radius": 240 },
+	{ "sprite": "geezer_1.png", "max_hp": 40, "base_attack": 5, "base_defense": 10, "speed": 18, "sight_radius": 120 },
+	{ "sprite": "geezer_2.png", "max_hp": 60, "base_attack": 15, "base_defense": 15, "speed": 22, "sight_radius": 280 },
+	{ "sprite": "barney.png", "max_hp": 80, "base_attack": 25, "base_defense": 25, "speed": 26, "sight_radius": 240 },
 ]
 
 # Colors

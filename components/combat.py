@@ -12,7 +12,7 @@ class CombatSystem(object):
 		base_defense (int)
 		attack_bonus (int)
 		defense_bonus (int)"""
-	def __init__(self, max_hp=1, base_attack=1, base_defense=0):
+	def __init__(self, max_hp=100, base_attack=25, base_defense=25):
 		# Current state
 		self.alive = True
 		# Health

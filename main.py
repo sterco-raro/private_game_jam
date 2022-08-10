@@ -65,7 +65,7 @@ def game_over(surface, background, font):
 
 def spawn_player():
 	"""Spawn the player at a defined location"""
-	_combat = CombatSystem(max_hp=8, base_attack=2, base_defense=1)
+	_combat = CombatSystem(max_hp=100, base_attack=25, base_defense=25)
 	return Player(position_xy=PLAYER_SPAWN_POINT, combat=_combat)
 
 

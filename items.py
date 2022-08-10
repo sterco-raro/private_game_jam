@@ -103,7 +103,7 @@ class Heart(Consumable):
 	Returns: object
 	Attributes:
 		heal_amount (int)"""
-	def __init__(self, position_xy, file_name="heart.png", heal_amount=1):
+	def __init__(self, position_xy, file_name="heart.png", heal_amount=20):
 		super().__init__(position_xy, file_name)
 		# Number of HP restored  by consuming this item
 		self.heal_amount = heal_amount
@@ -138,7 +138,7 @@ class Pill(Consumable):
 	Returns: object
 	Attributes:
 		bonus_value (int)"""
-	def __init__(self, position_xy, file_name="pill.png", bonus_value=1):
+	def __init__(self, position_xy, file_name="pill.png", bonus_value=5):
 		super().__init__(position_xy, file_name)
 		# Combat stats that can be powered up
 		self.stats = ["attack", "defense", "max_hp", "speed"]
@@ -186,7 +186,7 @@ class Pillbox(Pill):
 	Returns: object
 	Attributes:
 		number_of_pills (int)"""
-	def __init__(self, position_xy, file_name="pillbox.png", bonus_value=1, number_of_pills=3):
+	def __init__(self, position_xy, file_name="pillbox.png", bonus_value=5, number_of_pills=3):
 		super().__init__(position_xy, file_name, bonus_value)
 		# How many pills this box contains
 		self.number_of_pills = number_of_pills
