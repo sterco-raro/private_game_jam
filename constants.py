@@ -48,7 +48,7 @@ DAMPING_FACTOR = 100	# Speed damping factor
 
 # Entities
 PLAYER_SPAWN_POINT = (WORLD_WIDTH // 2, WORLD_HEIGHT // 2)
-SPAWN_DISTANCE = 4 * TILE_SIZE
+SPAWN_DISTANCE = 2 * TILE_SIZE
 
 ENEMIES = [
 	{ "sprite": "geezer_1.png", "max_hp": 4, "base_attack": 1, "base_defense": 0, "speed": 18, "sight_radius": 120 },

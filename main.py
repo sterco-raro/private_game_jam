@@ -15,10 +15,12 @@ try:
 	from pygame.locals import *
 
 	from constants import *
-	from entities import Player, Enemy, Heart, RandomPill
+	from entities import Player, Enemy
+	from items import Heart, Pill, Pillbox
 	from game_map import Tilemap
 	from utils import load_image
 	from components.combat import CombatSystem
+
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
@@ -202,7 +204,7 @@ def main():
 
 		# Logic updates
 		for item in items:
-			item.update(dt, tilemap.collision_map, [player] + enemies)
+			item.update(dt, tilemap.collision_map, player, enemies)
 
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
@@ -226,12 +228,20 @@ def main():
 			if is_dead:
 				# Update counter
 				kill_count += 1
-				# Randomly drop a heart (50%)
-				if random.randint(0, 1):
-					items.append(Heart((enemy.position[0] - 48, enemy.position[1] - 48)))
-				# # Randomly drop a power-up pill (50%)
-				# if random.randint(0, 1):
-				# 	items.append(RandomPill((enemy.position[0] + 48, enemy.position[1] + 48)))
+				# Random item roll [0, 1)
+				chance = random.random()
+				# Random spawn offset
+				x = enemy.position.x + (random.choice([-1, 1]) * random.randint(12, 32))
+				y = enemy.position.y + (random.choice([-1, 1]) * random.randint(12, 32))
+				# Pillbox (5%)
+				if chance < 0.05:
+					items.append(Pillbox((x, y), number_of_pills=random.randint(3, 5)))
+				# Heart (20%)
+				if chance < 0.2:
+					items.append(Heart((x, y)))
+				# Pill (30%)
+				elif chance < 0.3:
+					items.append(Pill((x, y)))
 				# Store dead entity reference to remove it outside the loop (avoid weird bugs)
 				to_remove.append(enemy)
 		# Delete dead enemies from entities list

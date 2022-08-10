@@ -9,7 +9,6 @@ try:
 	from utils import load_image
 	from camera import SimpleCamera
 	from constants import (
-		RECT_SIDES,
 		DAMPING_FACTOR,
 		TILES_INFO,
 		WORLD_WIDTH, WORLD_HEIGHT,
@@ -18,6 +17,7 @@ try:
 	)
 	from components.combat import CombatSystem
 	from components.follower_ai import FollowerAI
+
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
@@ -137,12 +137,10 @@ class Player(Entity):
 		for item in items:
 			if (
 				not item.has_been_consumed() and
-				# TODO Not working as expected
-				item.rect.inflate(5, 5).colliderect(self.rect) and
-				not self.combat.has_full_hp()
+				item.rect.inflate(5, 5).colliderect(self.rect)
 			):
-				item.consume(self)
-				consumed_items.append(item)
+				if item.consume(self):
+					consumed_items.append(item)
 		# Remove consumed items from original list
 		for item in consumed_items:
 			items.remove(item)
@@ -300,147 +298,3 @@ class Cursor(Entity):
 		cursor_position = pygame.mouse.get_pos()
 		self.rect.center = pygame.Vector2(	cursor_position[0] + camera_position[0],
 											cursor_position[1] + camera_position[1])
-
-
-# -------------------------------------------------------------------------------------------------
-
-
-class Heart(Entity):
-	"""TODO docstring for Heart"""
-	def __init__(self, position_xy, file_name="heart.png", heal_amount=1):
-		super().__init__(position_xy, file_name)
-		# Number of HP restored  by consuming this item
-		self.heal_amount = heal_amount
-		# One-time usage control
-		self._consumed = False
-
-	def has_been_consumed(self):
-		"""Check whether this item has been already consumed"""
-		return self._consumed
-
-	def render(self, surface):
-		"""Draw the heart entity on the given surface"""
-		if self.has_been_consumed(): return
-		surface.blit(self.image, self.rect)
-
-	def update(self, dt, collisions, entities):
-		"""Entity update logic"""
-		if self.has_been_consumed(): return
-		# Entities can push this item around
-		self.collide(dt, [e.rect for e in entities])
-		# Bounce off walls
-		self.collide(dt, collisions)
-
-	def consume(self, target):
-		"""Activate item effect first time only"""
-		# Only usable on combat-enabled entities
-		if not target.combat:
-			return
-		# Don't consume when target has full hp
-		if target.combat.hp == target.combat.max_hp:
-			return
-		# One time only
-		if not self._consumed:
-			self._consumed = True
-			target.combat.heal(self.heal_amount)
-			return True
-		return False
-
-	def collide(self, dt, rects):
-		"""TODO docstring for Heart.collide"""
-		# TODO add a bouncing effect
-		hits = []
-		index = 0
-
-		# Find first colliding entity
-		index = self.rect.collidelist(rects)
-		if index > -1:
-			# Get the collision rectangle
-			clip = self.rect.clip(rects[index])
-
-			# Get colliding sides
-			for edge in RECT_SIDES:
-				if getattr(clip, edge) == getattr(self.rect, edge):
-					hits.append(edge)
-
-			# Create a new direction vector based on colliding sides
-			direction = None
-			hits_len = len(hits)
-
-			# Two sides: move diagonally
-			if hits_len == 2:
-				if "top" in hits and "left" in hits:
-					direction = pygame.Vector2(1, 1)
-				elif "top" in hits and "right" in hits:
-					direction = pygame.Vector2(-1, 1)
-				elif "bottom" in hits and "left" in hits:
-					direction = pygame.Vector2(1, -1)
-				elif "bottom" in hits and "right" in hits:
-					direction = pygame.Vector2(-1, -1)
-			# Three sides: exclude opposite sides and move in the remaining direction
-			if hits_len >= 3:
-				if "top" in hits and "bottom" in hits:
-					if "left" in hits:
-						direction = pygame.Vector2(1, 0)
-					elif "right" in hits:
-						direction = pygame.Vector2(-1, 0)
-				elif "left" in hits and "right" in hits:
-					if "top" in hits:
-						direction = pygame.Vector2(0, 1)
-					elif "bottom" in hits:
-						direction = pygame.Vector2(0, -1)
-			# Perform movement
-			if direction:
-				self.move_to(dt, direction, [])
-
-
-# -------------------------------------------------------------------------------------------------
-
-
-class RandomPill(Entity):
-	"""TODO docstring for RandomPill"""
-	def __init__(self, position_xy, file_name="pill.png", bonus_value=1):
-		super().__init__(position_xy, file_name)
-		self.bonus_value  = bonus_value
-		# One-time usage control
-		self._consumed = False
-		# Combat stats that can be powered up
-		self.stats = ["attack", "defense", "max_hp", "speed"]
-
-	def has_been_consumed(self):
-		"""Check whether this item has been already consumed"""
-		return self._consumed
-
-	def render(self, surface):
-		"""Draw the heart entity on the given surface"""
-		if self.has_been_consumed(): return
-		surface.blit(self.image, self.rect)
-
-	def update(self, collisions, entities):
-		"""Entity update logic"""
-		if self.has_been_consumed(): return
-
-	def apply_bonus(self, target):
-		# Get a random stat
-		stat = self.stats[random.randint(0, len(self.stats) - 1)]
-		# Apply bonus
-		if stat == "attack":
-			target.combat.attack_bonus += self.bonus_value
-		if stat == "defense":
-			target.combat.defense_bonus += self.bonus_value
-		if stat == "max_hp":
-			target.combat.max_hp += self.bonus_value
-		if stat == "speed":
-			target.speed += self.bonus_value
-
-	def consume(self, target):
-		"""Activate item effect first time only"""
-		# Only usable on combat-enabled entities
-		if not target.combat:
-			return
-		# One time only
-		if not self._consumed:
-			self._consumed = True
-			self.apply_bonus(target)
-			return True
-		return False

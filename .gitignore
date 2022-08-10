@@ -4,3 +4,4 @@ dist/
 __pycache__
 *.spec
 todo.md
+.todo.md.bak
