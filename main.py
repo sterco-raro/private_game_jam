@@ -231,8 +231,8 @@ def main():
 				# Random item roll [0, 1)
 				chance = random.random()
 				# Random spawn offset
-				x = enemy.position.x + (random.choice([-1, 1]) * random.randint(12, 32))
-				y = enemy.position.y + (random.choice([-1, 1]) * random.randint(12, 32))
+				x = enemy.position.x + (random.choice([-1, 1]) * random.randint(24, 32))
+				y = enemy.position.y + (random.choice([-1, 1]) * random.randint(24, 32))
 				# Pillbox (5%)
 				if chance < 0.05:
 					items.append(Pillbox((x, y), number_of_pills=random.randint(3, 5)))
