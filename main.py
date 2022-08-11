@@ -15,7 +15,7 @@ try:
 	from pygame.locals import *
 
 	from constants import *
-	from utils import load_image
+	from utils import load_scaled_image
 	from hud import Hud
 	from entities import Player, Enemy
 	from items import Heart, Pill, Pillbox
@@ -121,6 +121,9 @@ def main():
 	# Pygame modules
 	clock 					= None	# pygame.time.Clock
 
+	# Custom modules
+	hud 					= None 	# Hud, handles UI rendering
+
 	# Surfaces
 	world 					= None	# pygame.Surface, holds world map
 	canvas	 				= None	# pygame.Surface, used to compose game screen before blitting to the viewport
@@ -133,13 +136,6 @@ def main():
 	events 					= None	# pygame.events queue
 	redraw_world 			= False	# the world map will render on next loop iteration
 	kill_count 				= 0 	# Player kills counter
-
-	# HUD related variables
-	hud_topleft 			= None	# pygame.Surface, holds the top-left section of the HUD
-	hud_topright 			= None	# pygame.Surface, holds the top-right section of the HUD
-	hud_topleft_text 		= None	# Formatted string container
-	hud_topright_text 		= None	# Formatted string container
-	hud_topright_margin 	= 0 	# Right margin for the top-right HUD
 
 	# Initialize pygame and window
 	pygame.init()
@@ -157,8 +153,7 @@ def main():
 	font_menu = pygame.font.SysFont(None, FONT_SIZE_MENU)
 
 	# Main menu and game over background surface
-	menu_background = load_image("background.png")
-	menu_background = pygame.transform.scale(menu_background, (VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
+	menu_background = load_scaled_image("background.png", (VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
 
 	# Render main menu and wait for user input
 	main_menu(viewport, menu_background, font_menu)
@@ -259,9 +254,9 @@ def main():
 		viewport.blit(canvas, (0, 0), player.camera.rect)
 
 		# Draw HUD
-		hud.render_hud(viewport, player, kill_count)
+		hud.render_hud(viewport, player.get_stats(), kill_count)
 
-		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
+		# Flip the screen, limit FPS and update deltatime
 		pygame.display.update()
 		dt = clock.tick(60)
 
@@ -277,3 +272,4 @@ def main():
 if __name__ == '__main__':
 	main()
 	pygame.quit()
+	print("\n\n:(\n")
