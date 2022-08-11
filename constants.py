@@ -63,3 +63,10 @@ DBG_COLLISION_TILES 	= (40, 80, 200)
 
 # Miscellanea
 RECT_SIDES = ["top", "bottom", "left", "right"]
+# May be useful one day as descriptive captions
+STATS_TAGS_DESCRIPTION = {
+	"life": "Player health, with optional bonus",
+	"damage": "Attack value, with optional bonus",
+	"shield": "Defense value, with optional bonus",
+	"movement": "Movement speed, with optional bonus",
+}
