@@ -111,6 +111,35 @@ class Player(Entity):
 		# Viewport camera
 		self.camera = SimpleCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
 
+	def get_stats(self):
+		"""Returns a dictionary with all the player stats: { "stat": { "base", "bonus", "icon_tag"} }"""
+		return {
+			"life": {
+				"base": self.combat.base_max_hp,
+				"bonus": self.combat.max_hp - self.combat.base_max_hp,
+				"current": self.combat.hp,
+				"icon_tag": "life"
+			},
+			"damage": {
+				"base": self.combat.base_attack,
+				"bonus": self.combat.attack_bonus,
+				"current": self.combat.attack,
+				"icon_tag": "damage"
+			},
+			"shield": {
+				"base": self.combat.base_defense,
+				"bonus": self.combat.defense_bonus,
+				"current": self.combat.defense,
+				"icon_tag": "shield"
+			},
+			"movement": {
+				"base": self.base_speed,
+				"bonus": self.speed - self.base_speed,
+				"current": self.speed,
+				"icon_tag": "movement"
+			}
+		}
+
 	def render(self, surface, show_collision_rects):
 		"""Draw the player sprite, weapons and crosshair on the given surface"""
 		if not surface: return
