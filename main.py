@@ -147,7 +147,7 @@ def main():
 	clock = pygame.time.Clock()
 
 	# Initialize hud module
-	hud = Hud(hud_size=FONT_SIZE_HUD, color=(0, 0, 0))
+	hud = Hud(viewport, hud_size=FONT_SIZE_HUD, color=(0, 0, 0))
 
 	# Create menu font object
 	font_menu = pygame.font.SysFont(None, FONT_SIZE_MENU)
@@ -254,7 +254,7 @@ def main():
 		viewport.blit(canvas, (0, 0), player.camera.rect)
 
 		# Draw HUD
-		hud.render_hud(viewport, player.get_stats(), kill_count)
+		hud.render_hud(player.get_stats(), kill_count)
 
 		# Flip the screen, limit FPS and update deltatime
 		pygame.display.update()
