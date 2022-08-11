@@ -46,9 +46,9 @@ class Hud(object):
 		self._line_height = 3 # in pixels
 		self._icon_placeholder 	= pygame.transform.scale(load_image("unknown.png"), (TILE_SIZE/2, TILE_SIZE/2))
 		self._icon_max_hp 		= pygame.transform.scale(load_image("heart.png"), (TILE_SIZE/2, TILE_SIZE/2))
-		# self._icon_attack 		= pygame.transform.scale(load_image("unknown.png"), (TILE_SIZE/2, TILE_SIZE/2))
-		# self._icon_defense 		= pygame.transform.scale(load_image("unknown.png"), (TILE_SIZE/2, TILE_SIZE/2))
-		# self._icon_speed 		= pygame.transform.scale(load_image("unknown.png"), (TILE_SIZE/2, TILE_SIZE/2))
+		self._icon_attack 		= pygame.transform.scale(load_image("weap_hand_L.png"), (TILE_SIZE/2, TILE_SIZE/2))
+		self._icon_defense 		= pygame.transform.scale(load_image("defense_placeholder.png"), (TILE_SIZE/2, TILE_SIZE/2))
+		self._icon_speed 		= pygame.transform.scale(load_image("speed_placeholder.png"), (TILE_SIZE/2, TILE_SIZE/2))
 
 		# Create font object
 		self.font = pygame.font.SysFont(font_name, hud_size, bold=bold, italic=italic)
@@ -115,9 +115,9 @@ class Hud(object):
 
 		# Draw surfaces
 		surface.blit(self._icon_max_hp, (line_size[0], VIEWPORT_HEIGHT - 4 * line_size[1] - HUD_MARGIN))
-		surface.blit(self._icon_placeholder, (line_size[0], VIEWPORT_HEIGHT - 3 * line_size[1] - HUD_MARGIN))
-		surface.blit(self._icon_placeholder, (line_size[0], VIEWPORT_HEIGHT - 2 * line_size[1] - HUD_MARGIN))
-		surface.blit(self._icon_placeholder, (line_size[0], VIEWPORT_HEIGHT - 1 * line_size[1] - HUD_MARGIN))
+		surface.blit(self._icon_attack, (line_size[0], VIEWPORT_HEIGHT - 3 * line_size[1] - HUD_MARGIN))
+		surface.blit(self._icon_defense, (line_size[0], VIEWPORT_HEIGHT - 2 * line_size[1] - HUD_MARGIN))
+		surface.blit(self._icon_speed, (line_size[0], VIEWPORT_HEIGHT - 1 * line_size[1] - HUD_MARGIN))
 		surface.blit(line_1, (TILE_SIZE/2 + line_size[0], VIEWPORT_HEIGHT - 4 * line_size[1] - HUD_MARGIN))
 		surface.blit(line_2, (TILE_SIZE/2 + line_size[0], VIEWPORT_HEIGHT - 3 * line_size[1] - HUD_MARGIN))
 		surface.blit(line_3, (TILE_SIZE/2 + line_size[0], VIEWPORT_HEIGHT - 2 * line_size[1] - HUD_MARGIN))
