@@ -17,7 +17,7 @@ try:
 	from constants import *
 	from utils import load_scaled_image
 	from hud import Hud
-	from entities import Player, Enemy
+	from creatures import Player, Enemy
 	from items import Heart, Pill, Pillbox
 	from game_map import Tilemap
 	from components.combat import CombatSystem
@@ -171,6 +171,9 @@ def main():
 	enemies = spawn_enemies(player)
 	items = []
 
+	# Test notification
+	hud.notify("AAAAAAAAAAAAAAAAAAAAAAHHHHH")
+
 	# Game loop
 	while 1:
 		# Player is dead, setup game over screen
@@ -198,6 +201,9 @@ def main():
 					player.combat.attack_bonus 	= 100
 					player.combat.defense_bonus = 100
 					player.combat.heal(100)
+				# TODO TMP
+				if event.key == K_j:
+					hud.notify("HAI PREMUTO LA J?????")
 
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
@@ -209,7 +215,7 @@ def main():
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
 
-		player.update(dt, tilemap.collision_map, enemies, items)
+		player.update(dt, tilemap.collision_map, enemies, items, hud.notify)
 
 		# Only draw world map when needed
 		if redraw_world:
