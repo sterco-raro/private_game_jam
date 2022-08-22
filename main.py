@@ -15,10 +15,11 @@ try:
 	from pygame.locals import *
 
 	from constants import *
-	from entities import Player, Enemy
+	from utils import load_scaled_image
+	from hud import Hud
+	from creatures import Player, Enemy
 	from items import Heart, Pill, Pillbox
 	from game_map import Tilemap
-	from utils import load_image
 	from components.combat import CombatSystem
 
 except ImportError as importErr:
@@ -112,11 +113,16 @@ def spawn_enemies(player, how_many=4):
 # -------------------------------------------------------------------------------------------------
 
 
+# TODO limit player.combat bonuses to +99 (speed?)
+
 def main():
 	print("\n{}. Version: {}\n".format(GAME_NAME, GAME_VERSION))
 
 	# Pygame modules
 	clock 					= None	# pygame.time.Clock
+
+	# Custom modules
+	hud 					= None 	# Hud, handles UI rendering
 
 	# Surfaces
 	world 					= None	# pygame.Surface, holds world map
@@ -131,13 +137,6 @@ def main():
 	redraw_world 			= False	# the world map will render on next loop iteration
 	kill_count 				= 0 	# Player kills counter
 
-	# HUD related variables
-	hud_topleft 			= None	# pygame.Surface, holds the top-left section of the HUD
-	hud_topright 			= None	# pygame.Surface, holds the top-right section of the HUD
-	hud_topleft_text 		= None	# Formatted string container
-	hud_topright_text 		= None	# Formatted string container
-	hud_topright_margin 	= 0 	# Right margin for the top-right HUD
-
 	# Initialize pygame and window
 	pygame.init()
 	pygame.mouse.set_visible(False)	# Hide system cursor
@@ -147,13 +146,14 @@ def main():
 	# Initialize clock (FPS limit and general-purpose timers)
 	clock = pygame.time.Clock()
 
-	# Create pygame font objects
-	font_hud = pygame.font.SysFont(None, FONT_SIZE_HUD)
+	# Initialize hud module
+	hud = Hud(viewport, hud_size=FONT_SIZE_HUD, color=(0, 0, 0))
+
+	# Create menu font object
 	font_menu = pygame.font.SysFont(None, FONT_SIZE_MENU)
 
 	# Main menu and game over background surface
-	menu_background = load_image("background.png")
-	menu_background = pygame.transform.scale(menu_background, (VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
+	menu_background = load_scaled_image("background.png", (VIEWPORT_WIDTH, VIEWPORT_HEIGHT))
 
 	# Render main menu and wait for user input
 	main_menu(viewport, menu_background, font_menu)
@@ -170,6 +170,9 @@ def main():
 	player = spawn_player()
 	enemies = spawn_enemies(player)
 	items = []
+
+	# Test notification
+	hud.notify("AAAAAAAAAAAAAAAAAAAAAAHHHHH")
 
 	# Game loop
 	while 1:
@@ -195,9 +198,12 @@ def main():
 				# Activate god mode
 				if event.key == K_g:
 					player.combat.max_hp 		= 100
-					player.combat.base_attack 	= 100
-					player.combat.base_defense 	= 100
+					player.combat.attack_bonus 	= 100
+					player.combat.defense_bonus = 100
 					player.combat.heal(100)
+				# Test notification system using a long string
+				if event.key == K_j:
+					hud.notify(", ".join(str(x) for x in range(100)))
 
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
@@ -209,7 +215,7 @@ def main():
 		for enemy in enemies:
 			enemy.update(events, dt, tilemap.collision_map, player)
 
-		player.update(dt, tilemap.collision_map, enemies, items)
+		player.update(dt, tilemap.collision_map, enemies, items, hud.notify)
 
 		# Only draw world map when needed
 		if redraw_world:
@@ -254,18 +260,9 @@ def main():
 		viewport.blit(canvas, (0, 0), player.camera.rect)
 
 		# Draw HUD
-		hud_topleft_text = "HP {}/{}".format(player.combat.hp, player.combat.max_hp)
-		hud_topright_text = "{} Kills".format(kill_count)
+		hud.render_hud(player.get_stats(), kill_count, debug_collisions)
 
-		hud_topleft = font_hud.render(hud_topleft_text, True, (0, 0, 0))
-		hud_topright = font_hud.render(hud_topright_text, True, (0, 0, 0))
-
-		hud_topright_margin = font_hud.size(hud_topright_text)[0] + HUD_MARGIN
-
-		viewport.blit(hud_topleft, (HUD_MARGIN, HUD_MARGIN))
-		viewport.blit(hud_topright, (VIEWPORT_WIDTH - hud_topright_margin, HUD_MARGIN))
-
-		# Flip the screen, limit FPS and update temporary variables (deltatime, HUD position)
+		# Flip the screen, limit FPS and update deltatime
 		pygame.display.update()
 		dt = clock.tick(60)
 
@@ -281,3 +278,4 @@ def main():
 if __name__ == '__main__':
 	main()
 	pygame.quit()
+	print("\n\n:(\n")

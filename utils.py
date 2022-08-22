@@ -1,5 +1,6 @@
 # Utilities
 
+
 try:
     import sys
     import os
@@ -27,3 +28,11 @@ def load_image(name):
         print('Cannot load image: {}'.format(fullname))
         raise SystemExit(message)
     return image
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+def load_scaled_image(name, size):
+    """Load image and return scaled image object. Size is a tuple"""
+    return pygame.transform.scale(load_image(name), size)
