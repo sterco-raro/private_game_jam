@@ -204,6 +204,17 @@ def main():
 				# Test notification system using a long string
 				if event.key == K_j:
 					hud.notify(", ".join(str(x) for x in range(100)))
+				# Debug items spawning
+				if event.key == K_1:
+					# Spawn Heart
+					items.append(Heart((player.rect.x + 96, player.rect.y + 96)))
+				if event.key == K_2:
+					# Spawn Pill
+					items.append(Pill((player.rect.x + 96, player.rect.y + 96)))
+				if event.key == K_3:
+					# Spawn Pillbox
+					items.append(Pillbox(	(player.rect.x + 96, player.rect.y + 96),
+											number_of_pills=random.randint(3, 5)))
 
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
