@@ -1,5 +1,6 @@
 # Combat system component
 
+# TODO limit bonuses to +99
 
 class CombatSystem(object):
 	"""Combat component: handles life, attack and defense for the parent entity
@@ -18,6 +19,7 @@ class CombatSystem(object):
 		# Health
 		self._hp = max_hp
 		self.max_hp = max_hp
+		self.base_max_hp = max_hp
 		# Base stats values
 		self.base_attack = base_attack
 		self.base_defense = base_defense

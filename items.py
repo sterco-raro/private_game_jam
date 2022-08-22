@@ -7,7 +7,7 @@ try:
 	import pygame
 
 	from constants import RECT_SIDES
-	from entities import Entity
+	from entity import Entity
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
