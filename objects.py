@@ -47,7 +47,8 @@ class Weapon(Entity):
 		weapon_position = lookdir * self.orbit_distance
 		rotation_angle = lookdir.angle_to((0, 1))
 		# Update position and rotate sprite
-		self.rect.center = self.parent.rect.center + weapon_position
+		# self.rect.center = self.parent.rect.center + weapon_position
+		self.rect.center = (self.parent.rect.center[0] + self.orbit_distance, self.parent.rect.center[1])
 		self.image = pygame.transform.rotate(self.original_image, rotation_angle)
 
 

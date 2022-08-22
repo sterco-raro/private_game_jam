@@ -84,11 +84,11 @@ class Player(Entity):
 	def render(self, surface, show_collision_rects):
 		"""Draw the player sprite, weapons and crosshair on the given surface"""
 		if not surface: return
+		# Draw player sprite
+		surface.blit(self.image, self.rect)
 		# Draw player weapons
 		surface.blit(self.weapon_slot_left.image, self.weapon_slot_left.rect)
 		surface.blit(self.weapon_slot_right.image, self.weapon_slot_right.rect)
-		# Draw player sprite
-		surface.blit(self.image, self.rect)
 		# Draw collision layer for each attacking hand
 		if show_collision_rects:
 			pygame.draw.rect(surface, DBG_COLLISION_PLAYER, self.weapon_slot_left.rect, width=1)
