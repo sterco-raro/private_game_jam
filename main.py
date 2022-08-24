@@ -201,9 +201,20 @@ def main():
 					player.combat.attack_bonus 	= 100
 					player.combat.defense_bonus = 100
 					player.combat.heal(100)
-				# TODO TMP
+				# Test notification system using a long string
 				if event.key == K_j:
-					hud.notify("HAI PREMUTO LA J?????")
+					hud.notify(", ".join(str(x) for x in range(100)))
+				# Debug items spawning
+				if event.key == K_1:
+					# Spawn Heart
+					items.append(Heart((player.rect.x + 96, player.rect.y + 96)))
+				if event.key == K_2:
+					# Spawn Pill
+					items.append(Pill((player.rect.x + 96, player.rect.y + 96)))
+				if event.key == K_3:
+					# Spawn Pillbox
+					items.append(Pillbox(	(player.rect.x + 96, player.rect.y + 96),
+											number_of_pills=random.randint(3, 5)))
 
 		# Clear working surface (canvas)
 		canvas.blit(world, (0, 0))
@@ -260,7 +271,7 @@ def main():
 		viewport.blit(canvas, (0, 0), player.camera.rect)
 
 		# Draw HUD
-		hud.render_hud(player.get_stats(), kill_count)
+		hud.render_hud(player.get_stats(), kill_count, debug_collisions)
 
 		# Flip the screen, limit FPS and update deltatime
 		pygame.display.update()

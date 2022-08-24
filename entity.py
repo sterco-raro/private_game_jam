@@ -1,23 +1,15 @@
-# Entities
+# Entity
 
 
 try:
 	import sys
-	import random
 	import pygame
 
 	from utils import load_image
-	from camera import SimpleCamera
 	from constants import (
 		DAMPING_FACTOR,
-		TILES_INFO,
 		WORLD_WIDTH, WORLD_HEIGHT,
-		VIEWPORT_WIDTH, VIEWPORT_HEIGHT,
-		DBG_COLLISION_PLAYER, DBG_COLLISION_ENEMY,
 	)
-	from components.combat import CombatSystem
-	from components.follower_ai import FollowerAI
-
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
@@ -79,4 +71,3 @@ class Entity(pygame.sprite.Sprite):
 		self.rect.center = self.position
 		# Flip sprite when moving along the X axis
 		self.flip_sprite(direction[0] < 0)
-

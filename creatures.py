@@ -1,4 +1,4 @@
-# Entities
+# Creatures
 
 
 try:
@@ -9,78 +9,17 @@ try:
 	from utils import load_image
 	from camera import SimpleCamera
 	from constants import (
-		DAMPING_FACTOR,
-		TILES_INFO,
-		WORLD_WIDTH, WORLD_HEIGHT,
 		VIEWPORT_WIDTH, VIEWPORT_HEIGHT,
 		DBG_COLLISION_PLAYER, DBG_COLLISION_ENEMY,
 	)
 	from entity import Entity
+	from objects import Weapon, Cursor
 	from items import Heart, Pill, Pillbox
 	from components.combat import CombatSystem
 	from components.follower_ai import FollowerAI
-
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
 	sys.exit(2)
-
-
-# -------------------------------------------------------------------------------------------------
-
-
-# class Entity(pygame.sprite.Sprite):
-# 	"""Generic entity with a sprite, movement and flipping mechanics
-# 	Returns: object
-# 	Attributes:
-# 		image (pygame.Surface),
-# 		rect (pygame.Rect),
-# 		speed (int),
-# 		position (pygame.Vector2),
-# 		flipped (bool)"""
-# 	def __init__(self, position_xy, file_name, speed=32):
-# 		pygame.sprite.Sprite.__init__(self)
-# 		# Sprite
-# 		self.image = load_image(file_name)
-# 		self.rect = self.image.get_rect()
-# 		# Initialize sprite rect position
-# 		self.rect.center = position_xy
-# 		# Movement
-# 		self.speed = speed
-# 		self.position = pygame.Vector2(position_xy)
-# 		# Flip sprite control
-# 		self.flipped = False
-
-# 	def flip_sprite(self, is_moving_left):
-# 		"""Flip sprite when changing directions"""
-# 		if is_moving_left and not self.flipped:
-# 			self.image = pygame.transform.flip(self.image, True, False)
-# 			self.flipped = True
-# 		elif not is_moving_left and self.flipped:
-# 			self.image = pygame.transform.flip(self.image, True, False)
-# 			self.flipped = False
-
-# 	def clamp_to_map(self, position):
-# 		"""Clamp position vector to world map area, returns the clamped vector"""
-# 		x = min(WORLD_WIDTH - self.rect.width/2, max(0, position.x))
-# 		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, position.y))
-# 		return pygame.Vector2(x, y)
-
-# 	def move_to(self, dt, direction, collisions):
-# 		"""Try to move the current entity toward direction vector"""
-# 		# Normalize vector
-# 		if direction.length() > 0:
-# 			direction.normalize_ip()
-# 		# Calculate new position
-# 		new_position = self.clamp_to_map(self.position + direction * dt * self.speed/DAMPING_FACTOR)
-# 		# Check for possible collisions
-# 		for rect in collisions:
-# 			if rect.collidepoint(new_position):
-# 				return
-# 		# No collisions, update entity position
-# 		self.position = new_position
-# 		self.rect.center = self.position
-# 		# Flip sprite when moving along the X axis
-# 		self.flip_sprite(direction[0] < 0)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -235,7 +174,7 @@ class Enemy(Entity):
 		corpse (pygame.Surface)"""
 	def __init__(
 		self,
-		position_xy, file_name="geezer_1.png", speed=28,			# Entity attributes
+		position_xy, file_name="geezer_1.png", speed=28,					# Entity attributes
 		enemy_id=1, sight_radius=250, target=None, combat=CombatSystem()	# Enemy attributes
 	):
 		super().__init__(position_xy, file_name, speed)
@@ -284,60 +223,3 @@ class Enemy(Entity):
 			self.combat.attack_target(player)
 		# Move entity towards player while not colliding
 		self.follower.update(dt, collisions)
-
-
-# -------------------------------------------------------------------------------------------------
-
-
-class Weapon(Entity):
-	"""Weapon entity, rotating around the parent
-	Returns: object
-	Attributes:
-		parent (Entity)
-		orbit_distance (int)
-		original_image (pygame.Surface, image copy used in rotation transforms"""
-	def __init__(self, position_xy, parent, file_name="weap_hand_L.png", orbit_distance=20, damage=1):
-		super().__init__(position_xy, file_name)
-		# Parent entity reference
-		self.parent = parent
-		# Orbit position offset from parent sprite
-		self.orbit_distance = orbit_distance
-		# Flip image if this weapon is on the left side of the parent
-		if self.orbit_distance < 0:
-			self.image = pygame.transform.flip(self.image, False, True)
-		# Keep a copy of the original image for rotations
-		self.original_image = self.image
-
-	def update(self, target):
-		"""Update logic based on parent and target position"""
-		# Default stance
-		if target is None:
-			lookdir = pygame.Vector2(-1, 0)
-		# Get vector pointing at current target
-		else:
-			lookdir = target.rect.center - self.parent.position
-			lookdir = lookdir.rotate(90)
-			lookdir.normalize_ip()
-		# Calculate position with offset and angle to update rotation
-		weapon_position = lookdir * self.orbit_distance
-		rotation_angle = lookdir.angle_to((0, 1))
-		# Update position and rotate sprite
-		self.rect.center = self.parent.rect.center + weapon_position
-		self.image = pygame.transform.rotate(self.original_image, rotation_angle)
-
-
-# -------------------------------------------------------------------------------------------------
-
-
-class Cursor(Entity):
-	"""Cursor entity that follows mouse movement
-	Returns: object
-	Attributes: None"""
-	def __init__(self, position_xy, file_name="cursor_crosshair.png"):
-		super().__init__(position_xy, file_name)
-
-	def update(self, camera_position):
-		"""Update position based on cursor and viewport"""
-		cursor_position = pygame.mouse.get_pos()
-		self.rect.center = pygame.Vector2(	cursor_position[0] + camera_position[0],
-											cursor_position[1] + camera_position[1])
