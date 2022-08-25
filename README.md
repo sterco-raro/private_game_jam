@@ -21,7 +21,7 @@ Life's hard, you're angry. Enjoy
 
 ## Dev Run
 
-create a virtual environment using python >= 3.6
+create a virtual environment using python >= 3.10
 
 #### Linux
 
