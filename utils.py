@@ -29,6 +29,9 @@ def load_image(name):
         raise SystemExit(message)
     return image
 
+def load_spritesheet(name, frames):
+    
+    pass
 
 # -------------------------------------------------------------------------------------------------
 
