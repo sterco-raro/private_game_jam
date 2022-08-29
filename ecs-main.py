@@ -40,6 +40,9 @@ class Velocity(object):
 class Renderable:
 	file_name: str = "fatso.png"
 	starting_position: tuple = (0, 0)
+	flippable: bool = True
+	flipped: bool = False
+	is_moving_left: bool = False
 
 	def __post_init__(self):
 		self.image = load_image(self.file_name)
@@ -47,7 +50,68 @@ class Renderable:
 		self.rect.center = self.starting_position
 
 
+@dataclass
+class PlayerController:
+	active: bool = True
+
+
+@dataclass
+class SimpleCamera:
+	width: int
+	height: int
+	target: Renderable
+
+	def __post_init__(self):
+		self.rect = pygame.Rect(0, 0, self.width, self.height)
+
+
 # -------------------------------------------------------------------------------------------------
+
+
+class RenderSystem(esper.Processor):
+	def __init__(self, canvas, background, viewport, camera):
+		super().__init__()
+		self.canvas = canvas
+		self.background = background
+		self.viewport = viewport
+		self.camera = camera
+
+	def flip_sprite(self, sprite):
+		if sprite.is_moving_left and not sprite.flipped:
+			sprite.image = pygame.transform.flip(sprite.image, True, False)
+			sprite.flipped = True
+		elif not sprite.is_moving_left and sprite.flipped:
+			sprite.image = pygame.transform.flip(sprite.image, True, False)
+			sprite.flipped = False
+
+	def process(self, dt):
+		# clear
+		self.canvas.blit(self.background, (0, 0))
+		# render all to canvas
+		for ent, sprite in self.world.get_component(Renderable):
+			if sprite.flippable:
+				self.flip_sprite(sprite)
+			self.canvas.blit(sprite.image, sprite.rect)
+		# render to viewport
+		self.viewport.blit(self.canvas, (0, 0), self.camera.rect)
+		# update display
+		pygame.display.update()
+
+
+class InputSystem(esper.Processor):
+
+	def process(self, dt):
+		pressed = pygame.key.get_pressed()
+		for ent, (vel, ctrl) in self.world.get_components(Velocity, PlayerController):
+			# Skip inactive controllers
+			if not ctrl.active: continue
+			# Movement direction
+			vel.direction = pygame.Vector2(0, 0)
+			# Get direction based on keys pressed
+			if pressed[pygame.K_w] or pressed[pygame.K_UP]: 	vel.direction += ( 0, -1)
+			if pressed[pygame.K_a] or pressed[pygame.K_LEFT]: 	vel.direction += (-1,  0)
+			if pressed[pygame.K_s] or pressed[pygame.K_DOWN]: 	vel.direction += ( 0,  1)
+			if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]: 	vel.direction += ( 1,  0)
 
 
 class MovementSystem(esper.Processor):
@@ -59,45 +123,61 @@ class MovementSystem(esper.Processor):
 		self.max_y = max_y
 
 	def process(self, dt):
-		for ent, (vel, rend) in self.world.get_components(Velocity, Renderable):
+		for ent, (vel, sprite) in self.world.get_components(Velocity, Renderable):
 			# normalize direction
 			if vel.direction.length() > 0:
 				vel.direction.normalize_ip()
 
 			# new position
-			rend.rect.center += vel.direction * dt * vel.speed/vel.damping_factor
+			sprite.rect.center += vel.direction * dt * vel.speed/vel.damping_factor
 
 			# clamp
-			rend.rect.x = max(self.min_x, rend.rect.x)
-			rend.rect.y = max(self.min_y, rend.rect.y)
-			rend.rect.x = min(self.max_x - rend.rect.w, rend.rect.x)
-			rend.rect.y = min(self.max_y - rend.rect.h, rend.rect.y)
+			sprite.rect.x = max(self.min_x, sprite.rect.x)
+			sprite.rect.y = max(self.min_y, sprite.rect.y)
+			sprite.rect.x = min(self.max_x - sprite.rect.w, sprite.rect.x)
+			sprite.rect.y = min(self.max_y - sprite.rect.h, sprite.rect.y)
+
+			# flip sprite when necessary
+			sprite.is_moving_left = vel.direction[0] < 0
 
 
-class RenderSystem(esper.Processor):
-	def __init__(self, canvas, background):
+class ViewportSystem(esper.Processor):
+
+	def __init__(self, max_width, max_height):
 		super().__init__()
-		self.canvas = canvas
-		self.background = background
+		self.max_width = max_width
+		self.max_height = max_height
 
 	def process(self, dt):
-		# clear
-		self.canvas.blit(self.background, (0, 0))
-		# render all to canvas
-		for ent, rend in self.world.get_component(Renderable):
-			self.canvas.blit(rend.image, rend.rect)
-		# update display
-		pygame.display.update()
+		for ent, (cam, sprite) in self.world.get_components(SimpleCamera, Renderable):
+			# center
+			x = cam.target.rect.centerx - cam.width // 2
+			y = cam.target.rect.centery - cam.height // 2
+			# clamp
+			x = min(self.max_width - cam.width, max(0, x))
+			y = min(self.max_height - cam.height, max(0, y))
+			# update position
+			cam.rect.x = x
+			cam.rect.y = y
 
 
-class CollisionSystem(esper.Processor):
-	def __init__(self):
-		pass
+class CrosshairSystem(esper.Processor):
+
+	def __init__(self, crosshair, camera_target):
+		super().__init__()
+		self.crosshair = crosshair
+		self.camera_target = camera_target
 
 	def process(self, dt):
-		# do stuff
-		pass
-
+		# do nothing when cursor is absent
+		if not self.crosshair: return
+		# get cursor and camera
+		cursor = self.world.component_for_entity(self.crosshair, Renderable)
+		camera = self.world.component_for_entity(self.camera_target, SimpleCamera)
+		# get mouse position
+		position = pygame.mouse.get_pos()
+		# update cursor position based on camera viewport
+		cursor.rect.center = pygame.Vector2(position[0] + camera.rect.x, position[1] + camera.rect.y)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -110,46 +190,39 @@ def run():
 
 	clock = pygame.time.Clock()
 
-	world = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
+	background = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
 	canvas = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
 
 	tilemap = Tilemap(size=(MAP_WIDTH, MAP_HEIGHT), file_name=LEVEL_ARENA)
-	tilemap.render(world, False)
+	tilemap.render(background, False)
 
-	ecsworld = esper.World()
-	player = ecsworld.create_entity()
-	ecsworld.add_component(player, Velocity())
-	ecsworld.add_component(player, Renderable(starting_position=pygame.Vector2(WORLD_WIDTH/2, WORLD_HEIGHT/2)))
+	world = esper.World()
 
-	ecsworld.add_processor(RenderSystem(canvas=canvas, background=world))
-	ecsworld.add_processor(MovementSystem(min_x=0, max_x=WORLD_WIDTH, min_y=0, max_y=WORLD_HEIGHT))
+	player = world.create_entity()
+	world.add_component(player, Velocity())
+	world.add_component(player, Renderable(starting_position=pygame.Vector2(WORLD_WIDTH/2, WORLD_HEIGHT/2)))
+	world.add_component(player, PlayerController())
+	world.add_component(player, SimpleCamera(width=VIEWPORT_WIDTH, height=VIEWPORT_HEIGHT, target=world.component_for_entity(player, Renderable)))
 
-	dt = clock.tick(60)
+	crosshair = world.create_entity()
+	world.add_component(crosshair, Renderable(file_name="cursor_crosshair.png", flippable=False))
+
+	world.add_processor(RenderSystem(canvas=canvas, background=background, viewport=viewport, camera=world.component_for_entity(player, SimpleCamera)))
+	world.add_processor(InputSystem())
+	world.add_processor(MovementSystem(min_x=0, max_x=WORLD_WIDTH, min_y=0, max_y=WORLD_HEIGHT))
+	world.add_processor(CrosshairSystem(crosshair=crosshair, camera_target=player))
+	world.add_processor(ViewportSystem(max_width=WORLD_WIDTH, max_height=WORLD_HEIGHT))
+
+	dt = 0
 	while 1:
+		# Handle general events
 		events = pygame.event.get()
 		for event in events:
 			if event.type == QUIT:
 				return
-
-			if event.type == KEYDOWN:
-				if event.key == K_w:
-					ecsworld.component_for_entity(player, Velocity).direction[1] += -1
-				if event.key == K_s:
-					ecsworld.component_for_entity(player, Velocity).direction[1] += 1
-				if event.key == K_a:
-					ecsworld.component_for_entity(player, Velocity).direction[0] += -1
-				if event.key == K_d:
-					ecsworld.component_for_entity(player, Velocity).direction[0] += 1
-			if event.type == KEYUP:
-				if event.key in (K_w, K_s):
-					ecsworld.component_for_entity(player, Velocity).direction[1] = 0
-				if event.key in (K_a, K_d):
-					ecsworld.component_for_entity(player, Velocity).direction[0] = 0
-
-		ecsworld.process(dt)
-
-		viewport.blit(canvas, (0, 0))
-
+		# Update systems
+		world.process(dt)
+		# Limit fps
 		dt = clock.tick(60)
 
 
