@@ -6,7 +6,7 @@ try:
     import os
     import pygame
 
-    from constants import RESOURCES_FOLDER
+    from constants import RESOURCES_FOLDER, WORLD_WIDTH, WORLD_HEIGHT
 except ImportError as importErr:
     print("Couldn't load module. {}".format(importErr))
     sys.exit(2)
@@ -36,3 +36,13 @@ def load_image(name):
 def load_scaled_image(name, size):
     """Load image and return scaled image object. Size is a tuple"""
     return pygame.transform.scale(load_image(name), size)
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+def clamp_to_map(position, sprite_w, sprite_h):
+    """Clamp a sprite position vector to world map area, returning the clamped vector"""
+    x = min(WORLD_WIDTH - sprite_w/2, max(0, position.x))
+    y = min(WORLD_HEIGHT - sprite_h/2, max(0, position.y))
+    return pygame.Vector2(x, y)

@@ -5,7 +5,7 @@ try:
 	import sys
 	import pygame
 
-	from utils import load_image
+	from utils import load_image, clamp_to_map
 	from constants import (
 		DAMPING_FACTOR,
 		WORLD_WIDTH, WORLD_HEIGHT,
@@ -49,19 +49,15 @@ class Entity(pygame.sprite.Sprite):
 			self.image = pygame.transform.flip(self.image, True, False)
 			self.flipped = False
 
-	def clamp_to_map(self, position):
-		"""Clamp position vector to world map area, returns the clamped vector"""
-		x = min(WORLD_WIDTH - self.rect.width/2, max(0, position.x))
-		y = min(WORLD_HEIGHT - self.rect.height/2, max(0, position.y))
-		return pygame.Vector2(x, y)
-
 	def move_to(self, dt, direction, collisions):
 		"""Try to move the current entity toward direction vector"""
 		# Normalize vector
 		if direction.length() > 0:
 			direction.normalize_ip()
 		# Calculate new position
-		new_position = self.clamp_to_map(self.position + direction * dt * self.speed/DAMPING_FACTOR)
+		new_position = clamp_to_map(self.position + direction * dt * self.speed/DAMPING_FACTOR,
+									self.rect.width,
+									self.rect.height)
 		# Check for possible collisions
 		for rect in collisions:
 			if rect.collidepoint(new_position):
