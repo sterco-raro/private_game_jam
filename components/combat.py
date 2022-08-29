@@ -34,10 +34,8 @@ class CombatSystem(object):
 	@hp.setter
 	def hp(self, value):
 		self._hp = max(0, min(value, self.max_hp))
-		if self._hp <= 0: 
+		if self._hp <= 0:
 			self.die()
-	#	if (self._hp + value) > self.max_hp:
-	#		self._hp = self.max_hp
 
 	@property
 	def attack(self):
@@ -74,10 +72,6 @@ class CombatSystem(object):
 		# Apply actual damage
 		damage = amount - self.defense
 		self.hp -= damage
-
-	#def dmg(self, amount):
-	#	self.hp += amount
-
 
 	def attack_target(self, target):
 		"""Deal damage to a target entity"""
