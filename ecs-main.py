@@ -114,16 +114,16 @@ class RenderSystem(esper.Processor):
 			sprite.flipped = False
 
 	def process(self, dt):
-		# clear
+		# Clear the screen with the map (background)
 		self.canvas.blit(self.background, (0, 0))
-		# render all to canvas
+		# Render all sprites to the working canvas
 		for ent, sprite in self.world.get_component(BasicSprite):
 			if sprite.flippable:
 				self.flip_sprite(sprite)
 			self.canvas.blit(sprite.image, sprite.rect)
-		# render to screen
+		# Render the working canvas to the screen
 		self.screen.blit(self.canvas, (0, 0), self.camera.rect)
-		# update display
+		# Update the display to show changes
 		pygame.display.update()
 
 
@@ -226,13 +226,13 @@ class ViewportSystem(esper.Processor):
 
 	def process(self, dt):
 		for ent, (cam, sprite) in self.world.get_components(SimpleCamera, BasicSprite):
-			# center
+			# Center screen viewport to camera viewport
 			x = cam.target.rect.centerx - cam.width // 2
 			y = cam.target.rect.centery - cam.height // 2
-			# clamp
+			# Clamp values to keep the camera limited to map size
 			x = min(self.max_width - cam.width, max(0, x))
 			y = min(self.max_height - cam.height, max(0, y))
-			# update position
+			# Update camera position
 			cam.rect.x = x
 			cam.rect.y = y
 
