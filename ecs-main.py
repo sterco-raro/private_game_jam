@@ -32,11 +32,22 @@ except ImportError as importErr:
 # -------------------------------------------------------------------------------------------------
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Velocity(object):
 	speed: int = 32
-	direction: pygame.Vector2 = pygame.Vector2(0, 0)
 	damping_factor: int = DAMPING_FACTOR
+	"""
+		Rect works with int, Vector2 works with floats.
+		This variable is essential to have the same left and right movement speed,
+		otherwise going left will be faster by ~0.4 seconds.
+		The explanation is that along the way we lose precision, so it's better
+		to do all the calculations in floats (vectors) and eventually assign them to ints (rects).
+		See https://stackoverflow.com/questions/18321274/pygame-python-left-seems-to-move-faster-than-right-why
+	"""
+	position: pygame.Vector2 = pygame.Vector2(0, 0)
+
+	def __post_init__(self):
+		self.direction = pygame.Vector2(0, 0)
 
 
 @dataclass()
@@ -140,22 +151,23 @@ class MovementSystem(esper.Processor):
 		self.min_y = min_y
 		self.max_y = max_y
 
+	def clamp_vector2_ip(self, vector, half_width, half_height):
+		vector.x = min(self.max_x - half_width, max(self.min_x + half_width, vector.x))
+		vector.y = min(self.max_y - half_height, max(self.min_y + half_height, vector.y))
+
 	def process(self, dt):
 		for ent, (vel, sprite) in self.world.get_components(Velocity, BasicSprite):
-			# normalize direction
+			# Normalize direction vector
 			if vel.direction.length() > 0:
 				vel.direction.normalize_ip()
-
-			# new position
-			sprite.rect.center += vel.direction * dt * vel.speed/vel.damping_factor
-
-			# clamp
-			sprite.rect.x = max(self.min_x, sprite.rect.x)
-			sprite.rect.y = max(self.min_y, sprite.rect.y)
-			sprite.rect.x = min(self.max_x - sprite.rect.w, sprite.rect.x)
-			sprite.rect.y = min(self.max_y - sprite.rect.h, sprite.rect.y)
-
-			# flip sprite when necessary
+			# Update position moving along the current direction vector
+			new_position = vel.position + vel.direction * dt * vel.speed/vel.damping_factor
+			# Clamp sprite to map
+			self.clamp_vector2_ip(new_position, sprite.rect.w/2, sprite.rect.h/2)
+			# Update position for velocity and sprite components
+			vel.position = new_position
+			sprite.rect.center = vel.position
+			# Update flag to flip sprite when necessary
 			sprite.is_moving_left = vel.direction[0] < 0
 
 
@@ -167,14 +179,14 @@ class CrosshairSystem(esper.Processor):
 		self.camera_target = camera_target
 
 	def process(self, dt):
-		# do nothing when cursor is absent
+		# Skip processing when cursor is absent
 		if not self.crosshair: return
-		# get cursor and camera
+		# Get cursor and camera instances
 		cursor = self.world.component_for_entity(self.crosshair, BasicSprite)
 		camera = self.world.component_for_entity(self.camera_target, SimpleCamera)
-		# get mouse position
+		# Get current mouse position
 		position = pygame.mouse.get_pos()
-		# update cursor position based on camera viewport
+		# Update cursor position based on camera viewport
 		cursor.rect.center = pygame.Vector2(position[0] + camera.rect.x, position[1] + camera.rect.y)
 
 
@@ -247,25 +259,26 @@ def create_level_arena():
 	world.add_component(crosshair, BasicSprite(file_name="cursor_crosshair.png"))
 	# Player entity
 	player = world.create_entity()
-	player_x = WORLD_WIDTH//2 - TILE_SIZE//2
-	player_y = WORLD_HEIGHT//2 - TILE_SIZE//2
-	player_sprite = BasicSprite(starting_position=pygame.Vector2(player_x, player_y), flippable=True)
+	player_pos = pygame.Vector2(WORLD_WIDTH//2 - TILE_SIZE//2, WORLD_HEIGHT//2 - TILE_SIZE//2)
+	player_sprite = BasicSprite(starting_position=player_pos, flippable=True)
 	camera = SimpleCamera(width=VIEWPORT_WIDTH, height=VIEWPORT_HEIGHT, target=player_sprite)
-	world.add_component(player, Velocity())
+	world.add_component(player, Velocity(position=player_pos))
 	world.add_component(player, player_sprite)
 	world.add_component(player, PlayerController())
 	world.add_component(player, camera)
 	world.add_component(player, Target(current=crosshair))
 	# Player weapons
 	weapon_left = world.create_entity()
-	weapon_left_sprite = BasicSprite(starting_position=pygame.Vector2(player_x - 20, player_y), file_name="weap_hand_L.png", flipped=True)
-	world.add_component(weapon_left, Velocity())
+	weapon_left_pos = player_pos - (20, 0)
+	weapon_left_sprite = BasicSprite(starting_position=weapon_left_pos, file_name="weap_hand_L.png", flipped=True)
+	world.add_component(weapon_left, Velocity(position=weapon_left_pos))
 	world.add_component(weapon_left, weapon_left_sprite)
 	world.add_component(weapon_left, Equippable(parent=player, original_image=weapon_left_sprite.image, offset_x=-20))
 	world.add_component(weapon_left, Target(current=crosshair))
 	weapon_right = world.create_entity()
-	weapon_right_sprite = BasicSprite(starting_position=pygame.Vector2(player_x + 20, player_y), file_name="weap_hand_L.png")
-	world.add_component(weapon_right, Velocity())
+	weapon_right_pos = player_pos + (20, 0)
+	weapon_right_sprite = BasicSprite(starting_position=weapon_right_pos, file_name="weap_hand_L.png")
+	world.add_component(weapon_right, Velocity(position=weapon_right_pos))
 	world.add_component(weapon_right, weapon_right_sprite)
 	world.add_component(weapon_right, Equippable(parent=player, original_image=weapon_right_sprite.image, offset_x=20))
 	world.add_component(weapon_right, Target(current=crosshair))
@@ -295,9 +308,10 @@ def run():
 	# Generate level and get related world instance
 	world = create_level_arena()
 
+	# General events list
 	events = None
 	while 1:
-		# General events handler
+		# Handle pygame events
 		events = pygame.event.get()
 		for event in events:
 			if event.type == QUIT:
