@@ -36,6 +36,8 @@ class Tilemap(object):
 		# Load map on start when available
 		if self.file_name:
 			self.set_from_file(file_name)
+		# Debug rendering
+		self.debug_rendering = False
 
 	def render_tile(self, surface, tile, position, show_collision):
 		"""Draw a tile on a surface with given position and optional collision rect"""
@@ -45,7 +47,7 @@ class Tilemap(object):
 		if show_collision:
 			pygame.draw.rect(surface, DBG_COLLISION_TILES, pygame.Rect(position, (TILE_SIZE, TILE_SIZE)), width=1)
 
-	def render(self, surface, show_collision_rects):
+	def render(self, surface):
 		"""Draw the whole world map on the given surface. Can draw collisions layer when needed"""
 		x = 0
 		y = 0
@@ -60,7 +62,7 @@ class Tilemap(object):
 				if self.map[i, j] == 0:
 					self.render_tile(surface, self.tile_floor, (x, y), False)
 				else:
-					self.render_tile(surface, self.tile_wall, (x, y), show_collision_rects)
+					self.render_tile(surface, self.tile_wall, (x, y), self.debug_rendering)
 
 	def rebuild_collision_map(self, data):
 		"""Build a new map of collidable tiles"""

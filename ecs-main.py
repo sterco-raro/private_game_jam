@@ -9,12 +9,15 @@
 
 
 # TODO Implement a simple CollisionSystem
+# TODO Implement quadtrees for the CollisionSystem
+# TODO Implement motion using Verlet integrations (inertia)
 # TODO implement player attacks
 # TODO Implement entities health
 # TODO Implement entities death
 # TODO Implement basic AI
 # TODO Implement items
 # TODO Implement consumables
+# TODO Implement a basic particle system
 
 
 try:
@@ -105,12 +108,13 @@ class Target:
 
 
 class RenderSystem(esper.Processor):
-	def __init__(self, canvas, background, screen, camera):
+	def __init__(self, canvas, background, screen, camera, tilemap):
 		super().__init__()
 		self.canvas = canvas
 		self.background = background
 		self.screen = screen
 		self.camera = camera
+		self.tilemap = tilemap
 
 	def flip_sprite(self, sprite):
 		if sprite.is_moving_left and not sprite.flipped:
@@ -121,6 +125,13 @@ class RenderSystem(esper.Processor):
 			sprite.flipped = False
 
 	def process(self, dt, debug):
+		# Redraw map once when debug state changes
+		if debug and not self.tilemap.debug_rendering:
+			self.tilemap.debug_rendering = True
+			self.tilemap.render(self.background)
+		elif not debug:
+			self.tilemap.debug_rendering = False
+			self.tilemap.render(self.background)
 		# Clear the screen with the map (background)
 		self.canvas.blit(self.background, (0, 0))
 		# Render all sprites to the working canvas
@@ -263,7 +274,7 @@ def create_level_arena():
 	background = pygame.Surface((WORLD_WIDTH, WORLD_HEIGHT)).convert()
 	# Background map
 	tilemap = Tilemap(size=(MAP_WIDTH, MAP_HEIGHT), file_name=LEVEL_ARENA)
-	tilemap.render(background, False)
+	tilemap.render(background)
 	# ECS container object
 	world = esper.World()
 	# Mouse cursor entity
@@ -272,7 +283,7 @@ def create_level_arena():
 	# Player entity
 	player = world.create_entity()
 	player_pos = pygame.Vector2(WORLD_WIDTH//2 - TILE_SIZE//2, WORLD_HEIGHT//2 - TILE_SIZE//2)
-	player_sprite = BasicSprite(file_name="fatso.png", starting_position=player_pos, flippable=True, debug_color=(40, 220, 40))
+	player_sprite = BasicSprite(file_name="fatso.png", starting_position=player_pos, flippable=True, debug_color=(80, 255, 80))
 	camera = SimpleCamera(width=VIEWPORT_WIDTH, height=VIEWPORT_HEIGHT, target=player_sprite)
 	world.add_component(player, Velocity(position=player_pos))
 	world.add_component(player, player_sprite)
@@ -282,14 +293,14 @@ def create_level_arena():
 	# Player weapons
 	weapon_left = world.create_entity()
 	weapon_left_pos = player_pos - (20, 0)
-	weapon_left_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=weapon_left_pos, flipped=True, debug_color=(180, 40, 180))
+	weapon_left_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=weapon_left_pos, flipped=True, debug_color=(255, 80, 255))
 	world.add_component(weapon_left, Velocity(position=weapon_left_pos))
 	world.add_component(weapon_left, weapon_left_sprite)
 	world.add_component(weapon_left, Equippable(parent=player, original_image=weapon_left_sprite.image, offset_x=-20))
 	world.add_component(weapon_left, Target(current=crosshair))
 	weapon_right = world.create_entity()
 	weapon_right_pos = player_pos + (20, 0)
-	weapon_right_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=weapon_right_pos, debug_color=(180, 40, 180))
+	weapon_right_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=weapon_right_pos, debug_color=(255, 80, 255))
 	world.add_component(weapon_right, Velocity(position=weapon_right_pos))
 	world.add_component(weapon_right, weapon_right_sprite)
 	world.add_component(weapon_right, Equippable(parent=player, original_image=weapon_right_sprite.image, offset_x=20))
@@ -306,7 +317,7 @@ def create_level_arena():
 		enemy_pos = pygame.Vector2(	random.randint(2 * TILE_SIZE, WORLD_WIDTH - 2 * TILE_SIZE),
 									random.randint(2 * TILE_SIZE, WORLD_HEIGHT - 2 * TILE_SIZE))
 		enemy_sprite = BasicSprite(	file_name=random.choice(["geezer_1.png", "geezer_2.png", "barney.png"]),
-									starting_position=enemy_pos, debug_color=(40, 160, 180))
+									starting_position=enemy_pos, debug_color=(255, 255, 80))
 		world.add_component(enemy, Velocity(position=enemy_pos))
 		world.add_component(enemy, enemy_sprite)
 		world.add_component(enemy, Target(current=-1))
@@ -315,7 +326,7 @@ def create_level_arena():
 			offset_x = random.randint(20, 25)
 			enemy_weapon_left = world.create_entity()
 			enemy_weapon_left_pos = enemy_pos - (offset_x, 0)
-			enemy_weapon_left_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=enemy_weapon_left_pos, flipped=True, debug_color=(180, 40, 180))
+			enemy_weapon_left_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=enemy_weapon_left_pos, flipped=True, debug_color=(255, 80, 255))
 			world.add_component(enemy_weapon_left, Velocity(position=enemy_weapon_left_pos))
 			world.add_component(enemy_weapon_left, enemy_weapon_left_sprite)
 			world.add_component(enemy_weapon_left, Equippable(parent=enemy, original_image=enemy_weapon_left_sprite.image, offset_x=offset_x))
@@ -324,7 +335,7 @@ def create_level_arena():
 			offset_x = - random.randint(20, 25)
 			enemy_weapon_right = world.create_entity()
 			enemy_weapon_right_pos = enemy_pos + (offset_x, 0)
-			enemy_weapon_right_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=enemy_weapon_right_pos, debug_color=(180, 40, 180))
+			enemy_weapon_right_sprite = BasicSprite(file_name="weap_hand_L.png", starting_position=enemy_weapon_right_pos, debug_color=(255, 80, 255))
 			world.add_component(enemy_weapon_right, Velocity(position=enemy_weapon_right_pos))
 			world.add_component(enemy_weapon_right, enemy_weapon_right_sprite)
 			world.add_component(enemy_weapon_right, Equippable(parent=enemy, original_image=enemy_weapon_right_sprite.image, offset_x=offset_x))
@@ -334,14 +345,14 @@ def create_level_arena():
 	# TODO TMP
 
 	# Add systems to world
-	world.add_processor(RenderSystem(canvas=canvas, background=background, screen=viewport, camera=camera))
+	world.add_processor(RenderSystem(canvas=canvas, background=background, screen=viewport, camera=camera, tilemap=tilemap))
 	world.add_processor(InputSystem())
 	world.add_processor(MovementSystem(min_x=0, max_x=WORLD_WIDTH, min_y=0, max_y=WORLD_HEIGHT))
 	world.add_processor(CrosshairSystem(crosshair=crosshair, camera_target=player))
 	world.add_processor(WeaponSystem())
 	world.add_processor(ViewportSystem(max_width=WORLD_WIDTH, max_height=WORLD_HEIGHT))
 	# Return level instance (ECS world)
-	return (world, tilemap, background)
+	return world
 
 
 # -------------------------------------------------------------------------------------------------
@@ -357,11 +368,10 @@ def run():
 	dt = 0
 
 	# Generate level and get related world instance
-	world, tilemap, background = create_level_arena()
+	world = create_level_arena()
 
-	debug = False
-	redraw_world = False
-	events = None
+	debug = False	# Enable debugging
+	events = None	# Pygame events list
 	while 1:
 		# Handle pygame events
 		events = pygame.event.get()
@@ -371,11 +381,6 @@ def run():
 			# Enable debug
 			if event.type == KEYDOWN and event.key == K_k:
 				debug = not debug
-				redraw_world = True
-		# Draw world map only when needed
-		if redraw_world:
-			tilemap.render(background, debug)
-			redraw_world = False
 		# Update systems
 		world.process(dt, debug)
 		# Limit fps
