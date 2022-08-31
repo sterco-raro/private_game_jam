@@ -345,12 +345,12 @@ def create_level_arena():
 	# TODO TMP
 
 	# Add systems to world
-	world.add_processor(RenderSystem(canvas=canvas, background=background, screen=viewport, camera=camera, tilemap=tilemap))
 	world.add_processor(InputSystem())
 	world.add_processor(MovementSystem(min_x=0, max_x=WORLD_WIDTH, min_y=0, max_y=WORLD_HEIGHT))
 	world.add_processor(CrosshairSystem(crosshair=crosshair, camera_target=player))
 	world.add_processor(WeaponSystem())
 	world.add_processor(ViewportSystem(max_width=WORLD_WIDTH, max_height=WORLD_HEIGHT))
+	world.add_processor(RenderSystem(canvas=canvas, background=background, screen=viewport, camera=camera, tilemap=tilemap))
 	# Return level instance (ECS world)
 	return world
 
