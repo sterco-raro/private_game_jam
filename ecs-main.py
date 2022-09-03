@@ -9,14 +9,14 @@
 
 
 # TODO Design Effect() component-system
-# TODO Implement entities health
+# TODO Design a basic particle system
+
 # TODO Implement entities death
 # TODO implement player attacks
 # TODO Implement basic AI
 # TODO implement enemy attacks
 # TODO Implement items
 # TODO Implement consumables
-# TODO Design a basic particle system
 
 
 try:
@@ -34,6 +34,7 @@ try:
 	from game_map import Tilemap
 	from hud import Hud
 	from data_structures import StaticQuadTree, ObjectsQuadTree, ObjQuadTreeItem
+	from components.health import Health
 
 except ImportError as importErr:
 	print("Couldn't load module. {}".format(importErr))
@@ -433,6 +434,7 @@ def spawn_player(world):
 	world.add_component(player, PlayerController(entities=[crosshair, weapon_left, weapon_right]))
 	world.add_component(player, camera)
 	world.add_component(player, Target(current=crosshair))
+	world.add_component(player, Health(max_hp=8))
 
 	# Return entity ID
 	return (player, crosshair, camera)
@@ -545,6 +547,7 @@ def create_level_arena(viewport):
 	# Return level instance (ECS world)
 	return (player, enemies, world)
 
+
 def notify_builder(world):
 	def notify(text):
 		world.get_processor(RenderSystem).hud.notify(text)
@@ -588,14 +591,17 @@ def run():
 				return
 
 			if event.type == KEYDOWN:
+
 				# Enable debug
 				if event.key == K_0:
 					debug = not debug
+
 				# Spawn more dummy entities
 				if event.key == K_9:
 					n = random.randint(8, 16)
 					enemies.extend(spawn_enemies(n, player, world))
 					notify("Spawned {} entities".format(n))
+
 				# Reset dummy entities
 				if event.key == K_8:
 					_to_be_deleted = [entity_id for entities in enemies for entity_id in entities]
@@ -610,6 +616,11 @@ def run():
 					n = random.randint(8, 16)
 					enemies = spawn_enemies(n, player, world)
 					notify("-{}, +{} entities".format(length, n))
+
+				# DEBUG print stuff
+				if event.key == K_7:
+					notify("Player health: {}/{}".format( 	world.component_for_entity(player, Health).hp,
+															world.component_for_entity(player, Health).max_hp))
 
 		# Update systems
 		world.process(dt, debug)
