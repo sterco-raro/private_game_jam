@@ -162,18 +162,22 @@ class Hud(object):
 										2 * HUD_MARGIN + self._icons_size[0] + 4 * self._char_size[0],
 										len(stats.keys()) * self._stats_line_height)
 
-	def _render_notification(self, text, debug):
+	def _render_notification(self, text, debug, full_width=False):
 		"""Private, renders the bottom-right section of the HUD: notifications"""
+
+		# TODO This is some real shit mate, last minute modding to support full width notifications
+		# TODO I mean it, this code is ugly at best
+
 		text_len = len(text)
 		pos_y = self.positions["notif"][1]
 		for i in range(text_len):
-			self._render_text(text[i], self.positions["notif"][0], pos_y)
+			self._render_text(text[i], HUD_MARGIN if full_width else self.positions["notif"][0], pos_y)
 			pos_y += self._stats_line_height
 		# Ugly debug rectangles around this section
 		if debug:
-			self._render_debug_border(	self.positions["notif"][0],
+			self._render_debug_border(	HUD_MARGIN if full_width else self.positions["notif"][0],
 										self.positions["notif"][1],
-										VIEWPORT_WIDTH - HUD_MARGIN - self.positions["notif"][0],
+										VIEWPORT_WIDTH - HUD_MARGIN * 2 if full_width else VIEWPORT_WIDTH - HUD_MARGIN - self.positions["notif"][0],
 										text_len * self._stats_line_height)
 
 	def notify(self, text, cooldown=3):
@@ -199,18 +203,22 @@ class Hud(object):
 
 	def render_hud(self, player_stats, kill_count, debug):
 		"""Renders the whole game HUD: life, score and player stats"""
-		# Top Left
-		self._render_player_life(	player_stats["life"]["current"],								# HP
-									player_stats["life"]["base"] + player_stats["life"]["bonus"], 	# Max HP
-									debug)
-		# Top Right
-		self._render_kill_counter(kill_count, debug)
-		# Bottom Left
-		self._render_player_stats(player_stats, debug)
-		# Bottom Right
-		self.update(debug)
+		if not self.surface: return
 
-	def update(self, debug):
+		if player_stats:
+			# Top Left
+			self._render_player_life(	player_stats["life"]["current"],								# HP
+										player_stats["life"]["base"] + player_stats["life"]["bonus"], 	# Max HP
+										debug)
+			# Bottom Left
+			self._render_player_stats(player_stats, debug)
+		# Top Right
+		if type(kill_count) is int:
+			self._render_kill_counter(kill_count, debug)
+
+		self.update(debug, player_stats is None)
+
+	def update(self, debug, missing_left_section):
 		"""Called continuously to update the notifications queue: check cooldown status and display next message"""
 		# No messages to handle
 		if len(self._messages_queue) == 0:
@@ -227,4 +235,4 @@ class Hud(object):
 		# No messages to handle
 		if len(self._messages_queue) == 0: return
 		# Render notification on screen, bottom-right section of the HUD
-		self._render_notification(self._messages_queue[0]["text"], debug)
+		self._render_notification(self._messages_queue[0]["text"], debug, missing_left_section)
