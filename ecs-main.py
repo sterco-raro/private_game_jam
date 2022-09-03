@@ -188,7 +188,7 @@ class RenderSystem(esper.Processor):
 
 		# TODO Processing the list in reversed order to render the player on top of the other sprites, before we get the spritegroups/layering implemented
 
-		for ent, sprite in reversed(self.world.get_component(BasicSprite)):
+		for ent, sprite in sorted(self.world.get_component(BasicSprite), key=lambda t: t[1].rect.centery):
 			# Skip rendering when the current sprite rect is completely outside the screen viewport rect
 			if sprite.rect.clip(self.camera.rect).size == (0, 0): continue
 			# Update sprites flip logic when needed
