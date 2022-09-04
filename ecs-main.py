@@ -240,8 +240,8 @@ class MovementSystem(esper.Processor):
 		self.max_y = max_y
 
 	def clamp_vector2_ip(self, vector, half_width, half_height):
-		vector.x = min(self.max_x - half_width, max(self.min_x + half_width, vector.x))
-		vector.y = min(self.max_y - half_height, max(self.min_y + half_height, vector.y))
+		vector.x = round(min(self.max_x - half_width, max(self.min_x + half_width, vector.x)))
+		vector.y = round(min(self.max_y - half_height, max(self.min_y + half_height, vector.y)))
 
 	def process(self, dt, debug):
 		# Get a reference to the collision system
@@ -254,7 +254,7 @@ class MovementSystem(esper.Processor):
 				vel.direction.normalize_ip()
 
 			# Update position moving along the current direction vector
-			new_position = vel.position + vel.direction * dt * vel.speed/vel.damping_factor
+			new_position = vel.position + vel.direction * dt * vel.speed
 
 			# Clamp sprite to map
 			self.clamp_vector2_ip(new_position, sprite.rect.w/2, sprite.rect.h/2)
@@ -429,7 +429,7 @@ def spawn_player(world):
 	# Player entity
 	player_sprite = BasicSprite(file_name="fatso.png", starting_position=player_pos, flippable=True, debug_color=(80, 255, 80))
 	camera = SimpleCamera(width=VIEWPORT_WIDTH, height=VIEWPORT_HEIGHT, target=player_sprite)
-	world.add_component(player, Velocity(position=player_pos))
+	world.add_component(player, Velocity(speed=320, position=player_pos))
 	world.add_component(player, player_sprite)
 	world.add_component(player, PlayerController(entities=[crosshair, weapon_left, weapon_right]))
 	world.add_component(player, camera)
@@ -581,7 +581,15 @@ def run():
 	debug = False		# Enable debugging
 	events = None		# Pygame events list
 	_to_be_deleted = [] # Temporary utility list
+
+	prev_time = time.time()
+
 	while 1:
+		# Calculate current deltatime
+		# dt = clock.tick(FPS)
+		dt = time.time() - prev_time
+		prev_time = time.time()
+
 		# Handle pygame events
 		events = pygame.event.get()
 		for event in events:
@@ -625,8 +633,8 @@ def run():
 		# Update systems
 		world.process(dt, debug)
 
-		# Limit fps
-		dt = clock.tick(60)
+		# Limit FPS
+		clock.tick(FPS)
 
 	# Clear world entities and components?
 	world.clear_database()
