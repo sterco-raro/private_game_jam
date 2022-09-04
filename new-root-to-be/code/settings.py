@@ -1,0 +1,19 @@
+import pygame
+
+# General
+GAME_NAME = "Hidden Wheelchair Attack"
+GAME_VERSION = "0.5"
+
+FPS_LIMIT = 60
+
+# Resources
+RESOURCES_FOLDER = "data"
+
+# Window
+WINDOW_TITLE = GAME_NAME
+
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
+VIEWPORT_WIDTH = 640
+VIEWPORT_HEIGHT = 480
