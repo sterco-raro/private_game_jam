@@ -1,4 +1,0 @@
-pygame>=2.1.2
-numpy>=1.18
-pyinstaller>=4.10
-esper>=2.1
