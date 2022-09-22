@@ -5,3 +5,5 @@ __pycache__
 *.spec
 todo.md
 .todo.md.bak
+profiling.txt
+cloc.txt
