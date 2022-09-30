@@ -45,7 +45,7 @@ same commands but virtualenv folder structure is different (.venv/Scripts/someth
 
 ### Build
 
-- **all in one executable**: python -m PyInstaller --onefile launcher.py --name HWA
+- **all in one executable**: python -m PyInstaller --onefile launcher.py --name hwa --add-data "code:code" --add-data "data:data" --add-data "graphics:graphics"
 
 ### Project structure
 

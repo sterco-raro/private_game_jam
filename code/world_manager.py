@@ -19,8 +19,7 @@ class WorldManager():
 		self.worlds_keys = []	# Levels names quick reference list
 		self.current = ""		# Current active world
 
-		self._WORLD_MODULE_NAME = "HWA.worlds.{}" 		# Reference name for loaded world modules in sys.modules
-		self._WORLD_PACKAGE_PATH = "code/worlds/{}.py"	# Relative file path for world modules 
+		self._WORLD_PACKAGE = "code.worlds" # World modules package
 
 		# Register event handlers
 		esper.set_handler("game_new", self.on_game_new)
@@ -34,17 +33,15 @@ class WorldManager():
 	def _load_world(self, file_name):
 		"""Load an esper.World definition from @file_name"""
 		_module = None
-		module_name = self._WORLD_MODULE_NAME.format(file_name)
+		module_name = "{}.{}".format(self._WORLD_PACKAGE, file_name)
 
 		# Directly call module if it has already been loaded
 		if module_name in sys.modules:
 			_module = sys.modules[module_name]
+
 		# Dynamically load module when absent
 		else:
-			spec = importlib.util.spec_from_file_location(file_name, self._WORLD_PACKAGE_PATH.format(file_name))
-			_module = importlib.util.module_from_spec(spec)
-			sys.modules[module_name] = _module 	# Add to loaded modules
-			spec.loader.exec_module(_module) 	# Run module code
+			_module = importlib.import_module( ".{}".format(file_name), package=self._WORLD_PACKAGE )
 
 		# Load world definition
 		return _module.load(file_name)
@@ -103,6 +100,6 @@ class WorldManager():
 		self.current = None
 		# Remove elements from loaded modules
 		for world_name in self.worlds_keys:
-			sys.modules.pop(self._WORLD_MODULE_NAME.format(world_name))
+			sys.modules.pop("{}.{}".format(self._WORLD_PACKAGE, world_name))
 		# Clear worlds data
 		self.worlds.clear()
